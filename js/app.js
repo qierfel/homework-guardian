@@ -320,3 +320,11 @@ if ('serviceWorker' in navigator) {
             console.log('Service Worker 注册失败:', error);
         });
 }
+
+// 设置按钮
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelector('[data-tab="settings"]')?.addEventListener('click', () => {
+        document.getElementById('main-screen').classList.add('hidden');
+        document.getElementById('setup-screen').classList.remove('hidden');
+    });
+});
