@@ -362,5 +362,31 @@ window.hideLoading = function() {
     overlay.classList.add('hidden');
 };
 
+// 汉字笔顺显示函数
+window.showHanziWriter = function(character) {
+    const container = document.getElementById('hanzi-container');
+    const grid = document.getElementById('hanzi-grid');
+    grid.innerHTML = '';
+    container.style.display = 'block';
+    
+    const writer = HanziWriter.create(grid, character, {
+        width: 200,
+        height: 200,
+        padding: 5,
+        showOutline: true,
+        strokeAnimationSpeed: 1,
+        delayBetweenStrokes: 300,
+        strokeColor: '#ffffff',
+        outlineColor: '#444444',
+        drawingColor: '#ff6b6b'
+    });
+    
+    writer.animateCharacter();
+    
+    // 点击重播
+    grid.onclick = () => writer.animateCharacter();
+    document.getElementById('hanzi-hint').textContent = character + ' - 点击重播';
+};
+
 // 导出全局实例
 window.uiController = new UIController();

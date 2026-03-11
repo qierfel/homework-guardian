@@ -84,11 +84,30 @@ class AIAssistant {
 
         try {
             const response = await this.callAPI(messages);
+            
+            // 检测是否涉及汉字书写
+            if (question.includes('怎么写') || question.includes('笔顺') || question.includes('田字格') || 
+                response.includes('笔顺') || response.includes('田字格')) {
+                // 提取汉字
+                const char = this.extractHanzi(question);
+                if (char && typeof HanziWriter !== 'undefined' && typeof window.showHanziWriter === 'function') {
+                    setTimeout(() => window.showHanziWriter(char), 500);
+                }
+            }
+            
             return response;
         } catch (error) {
             console.error('AI 问答失败:', error);
             throw error;
         }
+    }
+    
+    /**
+     * 提取问题中的第一个汉字
+     */
+    extractHanzi(text) {
+        const hanziMatch = text.match(/[\u4e00-\u9fa5]/);
+        return hanziMatch ? hanziMatch[0] : null;
     }
 
     /**

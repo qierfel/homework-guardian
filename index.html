@@ -10,6 +10,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
     <link rel="stylesheet" href="css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
 </head>
 <body>
     <!-- 设置页面（首次使用） -->
@@ -118,6 +119,11 @@ alert('Key前缀: ' + key.substring(0,8));
                         <p>👋 你好！我是 AI 小助手</p>
                         <p>遇到难题可以问我哦~</p>
                     </div>
+                </div>
+                
+                <div id="hanzi-container" style="display:none;text-align:center;padding:20px;background:#1a1a1a;margin:10px;border-radius:12px;">
+                    <div id="hanzi-grid" style="display:inline-block;"></div>
+                    <p id="hanzi-hint" style="color:#aaa;font-size:14px;margin-top:10px;"></p>
                 </div>
                 
                 <div class="chat-input-area">
