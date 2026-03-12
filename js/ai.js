@@ -7,7 +7,7 @@ class AIAssistant {
     constructor() {
         this.apiKey = '';
         this.apiEndpoint = 'https://openrouter.ai/api/v1/chat/completions';
-        this.model = 'qwen/qwen-turbo';
+        this.model = 'anthropic/claude-sonnet-4-5'; // 支持 vision
         this.systemPrompt = `你是一个耐心友善的AI家教，正在辅导一个小学生写作业。
 用简单易懂的语言解释知识点，多鼓励，不要直接给答案，而是引导孩子思考。
 回答要简洁，适合语音播报，每次回答控制在50字以内。`;
