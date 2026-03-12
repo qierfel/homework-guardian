@@ -301,7 +301,9 @@ class AuthManager {
             
             if (error) {
                 if (error.code === 'PGRST116') {
-                    // 记录不存在，创建默认设置
+                    // 记录不存在，使用默认 Keys
+                    console.log('用户设置不存在，使用默认 API Keys');
+                    this.setDefaultKeys();
                     await this.createDefaultSettings(userId);
                     return;
                 }
@@ -311,15 +313,34 @@ class AuthManager {
             if (data) {
                 if (data.openrouter_key) {
                     localStorage.setItem('openrouter_api_key', data.openrouter_key);
+                } else {
+                    // 数据库没有 Key，使用默认
+                    localStorage.setItem('openrouter_api_key', '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');
                 }
+                
                 if (data.bailian_key) {
                     localStorage.setItem('bailian_api_key', data.bailian_key);
+                } else {
+                    // 数据库没有 Key，使用默认
+                    localStorage.setItem('bailian_api_key', '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');
                 }
+                
                 console.log('已加载用户 API 配置');
             }
         } catch (error) {
             console.error('加载用户设置失败:', error);
+            // 失败时也使用默认 Keys
+            this.setDefaultKeys();
         }
+    }
+
+    /**
+     * 设置默认 API Keys
+     */
+    setDefaultKeys() {
+        localStorage.setItem('openrouter_api_key', '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');
+        localStorage.setItem('bailian_api_key', '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');
+        console.log('已设置默认 API Keys');
     }
 
     /**

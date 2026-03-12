@@ -6,12 +6,12 @@
 const APP_CONFIG = {
     // OpenRouter API Key（用于 AI 问答）
     get openrouterKey() {
-        return localStorage.getItem('openrouter_api_key') || '';
+        return localStorage.getItem('openrouter_api_key') || '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';
     },
     
     // 阿里云百炼 API Key（用于语音识别）
     get bailianKey() {
-        return localStorage.getItem('bailian_api_key') || '';
+        return localStorage.getItem('bailian_api_key') || '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';
     },
     
     // 孩子名字
