@@ -1,10 +1,18 @@
 /**
- * 认证系统 - 登录/注册逻辑
+ * 认证系统 - 登录/注册逻辑（集成 Supabase）
  */
+
+// Supabase 配置
+const SUPABASE_URL = 'https://nwazdbafsgwuispakdnv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53YXpkYmFmc2d3dWlzcGFrZG52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyNjA3NzMsImV4cCI6MjA1NzgzNjc3M30.sb_publishable_Cop47z2vSKYkUDq1WzTtew_PFqFykIM';
+
+// 初始化 Supabase 客户端
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 class AuthManager {
     constructor() {
         this.currentUser = null;
+        this.supabase = supabaseClient;
         this.init();
     }
 
@@ -97,9 +105,22 @@ class AuthManager {
         try {
             window.showLoading('登录中...');
             
-            // TODO: 调用 Supabase 登录 API
-            // 临时方案：模拟登录
-            await this.mockLogin(email, password);
+            // 调用 Supabase 登录 API
+            const { data, error } = await this.supabase.auth.signInWithPassword({
+                email,
+                password
+            });
+            
+            if (error) {
+                throw error;
+            }
+            
+            // 保存用户信息
+            this.currentUser = data.user;
+            localStorage.setItem('child_name', data.user.user_metadata?.child_name || '小朋友');
+            
+            // 读取用户设置（API Keys）
+            await this.loadUserSettings(data.user.id);
             
             window.hideLoading();
             window.showToast('登录成功！');
@@ -118,7 +139,7 @@ class AuthManager {
         const email = document.getElementById('register-email').value.trim();
         const password = document.getElementById('register-password').value;
         const confirmPassword = document.getElementById('register-password-confirm').value;
-        const childName = document.getElementById('register-child-name').value.trim();
+        const childName = document.getElementById('register-child-name').value.trim() || '小朋友';
 
         if (!email || !password || !confirmPassword) {
             window.showToast('请填写所有必填项');
@@ -143,15 +164,34 @@ class AuthManager {
         try {
             window.showLoading('注册中...');
             
-            // TODO: 调用 Supabase 注册 API
-            // 临时方案：模拟注册
-            await this.mockRegister(email, password, childName);
+            // 调用 Supabase 注册 API
+            const { data, error } = await this.supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        child_name: childName
+                    }
+                }
+            });
+            
+            if (error) {
+                throw error;
+            }
             
             window.hideLoading();
-            window.showToast('注册成功！');
             
-            // 自动登录
-            this.enterMainScreen();
+            // 如果需要邮箱验证
+            if (data.user && !data.session) {
+                window.showToast('注册成功！请查收验证邮件');
+                this.showLoginForm();
+            } else {
+                // 自动登录成功
+                this.currentUser = data.user;
+                localStorage.setItem('child_name', childName);
+                window.showToast('注册成功！');
+                this.enterMainScreen();
+            }
             
         } catch (error) {
             window.hideLoading();
@@ -160,7 +200,7 @@ class AuthManager {
         }
     }
 
-    handleForgotPassword() {
+    async handleForgotPassword() {
         const email = prompt('请输入您的注册邮箱：');
         
         if (!email) return;
@@ -170,10 +210,25 @@ class AuthManager {
             return;
         }
 
-        window.showToast('重置密码链接已发送到您的邮箱');
-        
-        // TODO: 调用 Supabase 重置密码 API
-        console.log('发送重置密码邮件到:', email);
+        try {
+            window.showLoading('发送中...');
+            
+            const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + '/reset-password.html'
+            });
+            
+            if (error) {
+                throw error;
+            }
+            
+            window.hideLoading();
+            window.showToast('重置密码链接已发送到您的邮箱');
+            
+        } catch (error) {
+            window.hideLoading();
+            window.showToast('发送失败: ' + error.message);
+            console.error('发送重置密码邮件失败:', error);
+        }
     }
 
     validateEmail(email) {
@@ -181,14 +236,24 @@ class AuthManager {
         return re.test(email);
     }
 
-    checkAuth() {
-        // 检查 localStorage 是否有登录信息
-        const userToken = localStorage.getItem('user_token');
-        
-        if (userToken) {
-            // TODO: 验证 token 有效性
-            this.enterMainScreen();
-        } else {
+    async checkAuth() {
+        try {
+            // 检查 Supabase session
+            const { data: { session } } = await this.supabase.auth.getSession();
+            
+            if (session) {
+                this.currentUser = session.user;
+                localStorage.setItem('child_name', session.user.user_metadata?.child_name || '小朋友');
+                
+                // 读取用户设置（API Keys）
+                await this.loadUserSettings(session.user.id);
+                
+                this.enterMainScreen();
+            } else {
+                this.showAuthScreen();
+            }
+        } catch (error) {
+            console.error('检查登录状态失败:', error);
             this.showAuthScreen();
         }
     }
@@ -208,44 +273,113 @@ class AuthManager {
         }
     }
 
-    logout() {
-        localStorage.removeItem('user_token');
-        localStorage.removeItem('user_email');
-        this.currentUser = null;
-        this.showAuthScreen();
-        window.showToast('已退出登录');
+    async logout() {
+        try {
+            await this.supabase.auth.signOut();
+            localStorage.removeItem('child_name');
+            localStorage.removeItem('openrouter_api_key');
+            localStorage.removeItem('bailian_api_key');
+            this.currentUser = null;
+            this.showAuthScreen();
+            window.showToast('已退出登录');
+        } catch (error) {
+            console.error('退出登录失败:', error);
+            window.showToast('退出失败: ' + error.message);
+        }
     }
 
-    // 临时模拟登录（真实环境需调用 Supabase）
-    async mockLogin(email, password) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                // 简单验证（临时）
-                if (password.length >= 6) {
-                    localStorage.setItem('user_token', 'mock_token_' + Date.now());
-                    localStorage.setItem('user_email', email);
-                    this.currentUser = { email };
-                    resolve();
-                } else {
-                    reject(new Error('密码错误'));
+    /**
+     * 从 Supabase 读取用户设置（API Keys）
+     */
+    async loadUserSettings(userId) {
+        try {
+            const { data, error } = await this.supabase
+                .from('user_settings')
+                .select('openrouter_key, bailian_key')
+                .eq('user_id', userId)
+                .single();
+            
+            if (error) {
+                if (error.code === 'PGRST116') {
+                    // 记录不存在，创建默认设置
+                    await this.createDefaultSettings(userId);
+                    return;
                 }
-            }, 1000);
-        });
+                throw error;
+            }
+            
+            if (data) {
+                if (data.openrouter_key) {
+                    localStorage.setItem('openrouter_api_key', data.openrouter_key);
+                }
+                if (data.bailian_key) {
+                    localStorage.setItem('bailian_api_key', data.bailian_key);
+                }
+                console.log('已加载用户 API 配置');
+            }
+        } catch (error) {
+            console.error('加载用户设置失败:', error);
+        }
     }
 
-    // 临时模拟注册（真实环境需调用 Supabase）
-    async mockRegister(email, password, childName) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                localStorage.setItem('user_token', 'mock_token_' + Date.now());
-                localStorage.setItem('user_email', email);
-                if (childName) {
-                    localStorage.setItem('child_name', childName);
-                }
-                this.currentUser = { email, childName };
-                resolve();
-            }, 1000);
-        });
+    /**
+     * 创建默认用户设置
+     */
+    async createDefaultSettings(userId) {
+        try {
+            const { error } = await this.supabase
+                .from('user_settings')
+                .insert({
+                    user_id: userId,
+                    theme: 'dark',
+                    notification_enabled: true
+                });
+            
+            if (error) {
+                console.error('创建默认设置失败:', error);
+            }
+        } catch (error) {
+            console.error('创建默认设置异常:', error);
+        }
+    }
+
+    /**
+     * 保存用户设置到 Supabase
+     */
+    async saveUserSettings(openrouterKey, bailianKey) {
+        if (!this.currentUser) {
+            console.warn('用户未登录，无法保存设置');
+            return;
+        }
+
+        try {
+            const { error } = await this.supabase
+                .from('user_settings')
+                .upsert({
+                    user_id: this.currentUser.id,
+                    openrouter_key: openrouterKey || null,
+                    bailian_key: bailianKey || null,
+                    updated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'user_id'
+                });
+            
+            if (error) {
+                throw error;
+            }
+            
+            // 同步到 localStorage
+            if (openrouterKey) {
+                localStorage.setItem('openrouter_api_key', openrouterKey);
+            }
+            if (bailianKey) {
+                localStorage.setItem('bailian_api_key', bailianKey);
+            }
+            
+            console.log('用户设置已保存');
+        } catch (error) {
+            console.error('保存用户设置失败:', error);
+        }
     }
 }
 
