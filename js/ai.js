@@ -129,29 +129,46 @@ class AIAssistant {
             
             // 检测是否涉及汉字书写（更广泛的关键词）
             const writingKeywords = ['怎么写', '如何写', '笔顺', '笔画', '田字格', '写法', '写字', '怎样写'];
-            const shouldShowHanzi = writingKeywords.some(keyword => 
+            
+            console.log('📝 检测汉字书写关键词...');
+            console.log('问题:', question);
+            console.log('回答:', response.substring(0, 100));
+            
+            const foundKeyword = writingKeywords.find(keyword => 
                 question.includes(keyword) || response.includes(keyword)
             );
             
-            if (shouldShowHanzi) {
+            if (foundKeyword) {
+                console.log('✅ 检测到关键词:', foundKeyword);
+                
                 // 提取汉字（优先从问题中提取，其次从回答中提取）
                 let char = this.extractHanzi(question);
                 if (!char) {
                     char = this.extractHanzi(response);
                 }
                 
-                console.log('检测到书写相关问题，提取汉字:', char);
+                console.log('📝 提取到的汉字:', char);
                 
                 if (char) {
+                    console.log('检查 HanziWriter 加载状态...');
+                    console.log('typeof HanziWriter:', typeof HanziWriter);
+                    console.log('typeof window.showHanziWriter:', typeof window.showHanziWriter);
+                    
                     if (typeof HanziWriter !== 'undefined' && typeof window.showHanziWriter === 'function') {
-                        console.log('显示汉字笔顺:', char);
-                        setTimeout(() => window.showHanziWriter(char), 800);
+                        console.log('✅ HanziWriter 可用，800ms 后显示汉字:', char);
+                        setTimeout(() => {
+                            console.log('🎯 现在调用 showHanziWriter:', char);
+                            window.showHanziWriter(char);
+                        }, 800);
                     } else {
-                        console.warn('HanziWriter 未加载');
+                        console.error('❌ HanziWriter 未加载');
+                        window.showToast('汉字笔顺功能未加载，请刷新页面');
                     }
                 } else {
-                    console.log('未找到汉字');
+                    console.warn('⚠️ 未能提取到汉字');
                 }
+            } else {
+                console.log('❌ 未检测到书写关键词');
             }
             
             return response;
