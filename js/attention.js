@@ -1,10 +1,11 @@
 /**
  * 注意力检测模块 - attention.js
+ * 使用 MediaPipe Pose 检测姿态（低头 = 专注）
  */
 
 class AttentionDetector {
     constructor() {
-        this.model = null;
+        this.pose = null;
         this.isRunning = false;
         this.tickIntervalId = null;
         this.detectIntervalId = null;
@@ -15,15 +16,31 @@ class AttentionDetector {
         this.DISTRACTED_THRESHOLD = 15;
         this.currentStatus = 'focused';
         this.isDetecting = false;
+        this.stablePoseCount = 0; // 稳定姿态计数
     }
 
     async init() {
         try {
-            this.model = await blazeface.load();
-            console.log('BlazeFace 加载完成');
+            // 加载 MediaPipe Pose
+            this.pose = new Pose({
+                locateFile: (file) => {
+                    return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+                }
+            });
+            
+            this.pose.setOptions({
+                modelComplexity: 0, // 0=Lite, 1=Full, 2=Heavy（用最轻量级）
+                smoothLandmarks: true,
+                enableSegmentation: false,
+                smoothSegmentation: false,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+            
+            console.log('✅ MediaPipe Pose 初始化完成');
             return true;
         } catch(e) {
-            console.error('BlazeFace 加载失败:', e);
+            console.error('❌ MediaPipe Pose 加载失败:', e);
             return false;
         }
     }
@@ -34,7 +51,7 @@ class AttentionDetector {
         this.isRunning = true;
         this.videoElement = videoElement;
 
-        // 计时器：每秒跑一次，纯计时，不做任何检测
+        // 计时器：每秒跑一次，纯计时
         this.tickIntervalId = setInterval(() => {
             if (!this.isRunning) return;
             if (this.currentStatus === 'focused') {
@@ -57,18 +74,80 @@ class AttentionDetector {
             });
         }, 1000);
 
-        // 人脸检测：每5秒跑一次，但不阻塞计时器
-        this.detectIntervalId = setInterval(() => {
+        // 姿态检测：每3秒跑一次
+        this.detectIntervalId = setInterval(async () => {
             if (!this.isRunning || this.isDetecting) return;
             this.isDetecting = true;
-            this.model.estimateFaces(videoElement, false)
-                .then(faces => {
-                    this.currentStatus = faces.length > 0 ? 'focused' : 'distracted';
-                    if (this.currentStatus === 'focused') this.distractedDuration = 0;
-                })
-                .catch(e => console.error('检测错误:', e))
-                .finally(() => { this.isDetecting = false; });
-        }, 5000);
+            
+            try {
+                await this.detectPose(videoElement);
+            } catch (e) {
+                console.error('姿态检测错误:', e);
+            } finally {
+                this.isDetecting = false;
+            }
+        }, 3000);
+    }
+    
+    /**
+     * 检测姿态并判断是否专注
+     */
+    async detectPose(videoElement) {
+        return new Promise((resolve) => {
+            this.pose.onResults((results) => {
+                if (!results.poseLandmarks) {
+                    // 没检测到人 → 不专注
+                    this.currentStatus = 'distracted';
+                    this.stablePoseCount = 0;
+                    resolve();
+                    return;
+                }
+                
+                const landmarks = results.poseLandmarks;
+                
+                // 关键点：0=鼻子, 11=左肩, 12=右肩
+                const nose = landmarks[0];
+                const leftShoulder = landmarks[11];
+                const rightShoulder = landmarks[12];
+                
+                if (!nose || !leftShoulder || !rightShoulder) {
+                    this.currentStatus = 'distracted';
+                    this.stablePoseCount = 0;
+                    resolve();
+                    return;
+                }
+                
+                // 计算头部高度（鼻子 y 坐标）
+                const noseY = nose.y;
+                const shoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+                
+                // 判断：鼻子低于肩膀 = 低头 = 专注
+                const isHeadDown = noseY > shoulderY - 0.05; // 允许5%误差
+                
+                if (isHeadDown) {
+                    this.stablePoseCount++;
+                    // 需要连续2次检测都是低头，才算专注（避免误判）
+                    if (this.stablePoseCount >= 2) {
+                        this.currentStatus = 'focused';
+                    }
+                } else {
+                    this.stablePoseCount = 0;
+                    this.currentStatus = 'distracted';
+                }
+                
+                console.log('姿态检测:', {
+                    noseY: noseY.toFixed(3),
+                    shoulderY: shoulderY.toFixed(3),
+                    isHeadDown,
+                    status: this.currentStatus
+                });
+                
+                resolve();
+            });
+            
+            // 发送视频帧
+            this.pose.send({image: videoElement});
+        });
     }
 
     triggerAlert() {
