@@ -125,17 +125,30 @@ class HomeworkGuardianApp {
             window.showLoading('初始化中...');
             
             // 1. 初始化 UI 控制器（绑定所有按钮事件）
+            console.log('1. 初始化 UI 控制器');
             window.uiController.init();
             
             // 2. 直接启动摄像头（最简单方式）
+            console.log('2. 准备启动摄像头');
             const video = document.getElementById('camera-video');
+            console.log('video 元素:', video);
+            
+            if (!video) {
+                throw new Error('找不到 video 元素');
+            }
+            
+            console.log('请求摄像头权限...');
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'user' }
             });
+            console.log('摄像头权限已获取');
             
             video.srcObject = stream;
             this.currentStream = stream; // 保存 stream 供切换摄像头使用
+            console.log('video.srcObject 已设置');
+            
             await video.play();
+            console.log('video.play() 完成');
             
             // 3. 绑定摄像头控制按钮
             this.bindCameraControls();
