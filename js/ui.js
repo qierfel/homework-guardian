@@ -1137,6 +1137,13 @@ UIController.prototype.clearConversationHistory = function() {
         `;
     }
     
+    // 隐藏田字格
+    const hanziContainer = document.getElementById('hanzi-container');
+    if (hanziContainer) {
+        hanziContainer.style.display = 'none';
+        console.log('✅ 田字格已隐藏');
+    }
+    
     // 更新计数
     this.updateConversationCount();
     
