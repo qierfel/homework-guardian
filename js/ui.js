@@ -496,6 +496,17 @@ class UIController {
      */
     async analyzeHomework(imageBase64) {
         try {
+            // 矫正图片方向
+            if (window.imageProcessor) {
+                try {
+                    window.showLoading('正在矫正图片方向...');
+                    imageBase64 = await window.imageProcessor.correctHomeworkOrientation(imageBase64);
+                    console.log('✅ 图片方向矫正完成');
+                } catch (error) {
+                    console.error('⚠️ 图片矫正失败，使用原图:', error);
+                }
+            }
+            
             // 显示用户消息
             this.addChatMessage('📝 [作业照片]', true, imageBase64);
             

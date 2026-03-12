@@ -79,7 +79,18 @@ class HomeworkMonitor {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(this.videoElement, 0, 0, canvas.width, canvas.height);
 
-            const imageBase64 = canvas.toDataURL('image/jpeg', 0.7); // 压缩质量
+            let imageBase64 = canvas.toDataURL('image/jpeg', 0.7); // 压缩质量
+
+            // 矫正图片方向（针对俯拍作业）
+            if (window.imageProcessor) {
+                try {
+                    console.log('🔄 矫正图片方向...');
+                    imageBase64 = await window.imageProcessor.correctHomeworkOrientation(imageBase64);
+                    console.log('✅ 图片方向矫正完成');
+                } catch (error) {
+                    console.error('⚠️ 图片矫正失败，使用原图:', error);
+                }
+            }
 
             // 发送给 AI 分析
             const prompt = `请快速分析这张作业书写照片：
