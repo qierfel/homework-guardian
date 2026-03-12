@@ -534,6 +534,12 @@ class UIController {
      */
     async sendImageToAI(imageBase64) {
         try {
+            // 停止当前正在播报的语音
+            if (window.voiceManager && typeof window.voiceManager.stopSpeaking === 'function') {
+                window.voiceManager.stopSpeaking();
+                console.log('✅ 已停止旧的语音播报');
+            }
+            
             // 显示用户消息（带图片预览）
             this.addChatMessage('📷 [图片]', true, imageBase64);
             
@@ -829,6 +835,12 @@ class UIController {
      * 处理用户提问
      */
     async handleUserQuestion(question) {
+        // 停止当前正在播报的语音
+        if (window.voiceManager && typeof window.voiceManager.stopSpeaking === 'function') {
+            window.voiceManager.stopSpeaking();
+            console.log('✅ 已停止旧的语音播报');
+        }
+        
         // 显示用户消息
         this.addChatMessage(question, true);
         

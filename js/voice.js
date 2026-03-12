@@ -237,6 +237,7 @@ class VoiceManager {
      */
     stopSpeaking() {
         if (this.synthesis) {
+            console.log('🔇 停止语音播报');
             this.synthesis.cancel();
         }
     }
