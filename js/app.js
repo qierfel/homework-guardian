@@ -149,10 +149,21 @@ class HomeworkGuardianApp {
             }
             
             console.log('请求摄像头权限...');
+            
+            // 检查是否支持摄像头
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('您的浏览器不支持摄像头功能，请使用 Chrome 或 Safari');
+            }
+            
+            // 检查是否是 HTTPS
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                throw new Error('摄像头需要 HTTPS 连接！当前是 ' + location.protocol);
+            }
+            
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'user' }
             });
-            console.log('摄像头权限已获取');
+            console.log('✅ 摄像头权限已获取');
             
             video.srcObject = stream;
             this.currentStream = stream; // 保存 stream 供切换摄像头使用
@@ -173,13 +184,37 @@ class HomeworkGuardianApp {
             console.log('所有模块初始化完成');
         } catch (error) {
             window.hideLoading();
-            window.showToast('摄像头错误: ' + error.name + ' ' + error.message);
-            console.error('摄像头启动失败:', error);
+            console.error('❌ 守护启动失败:', error);
+            console.error('错误名称:', error.name);
+            console.error('错误消息:', error.message);
+            
+            // 根据错误类型给出具体提示
+            let errorMsg = '';
+            if (error.name === 'NotAllowedError') {
+                errorMsg = '摄像头权限被拒绝！请在浏览器设置中允许访问摄像头';
+            } else if (error.name === 'NotFoundError') {
+                errorMsg = '未找到摄像头设备';
+            } else if (error.name === 'NotReadableError') {
+                errorMsg = '摄像头被其他应用占用';
+            } else if (error.message.includes('HTTPS')) {
+                errorMsg = '需要 HTTPS 连接！请使用 https://... 访问';
+            } else {
+                errorMsg = '摄像头错误: ' + error.message;
+            }
+            
+            window.showToast('❌ ' + errorMsg);
+            alert('守护启动失败:\n\n' + errorMsg + '\n\n请检查:\n1. 是否使用 HTTPS 访问\n2. 浏览器是否允许摄像头权限\n3. 摄像头是否被其他应用占用');
             
             // 更新状态显示错误
             const statusText = document.querySelector('#attention-status .status-text');
             if (statusText) {
-                statusText.textContent = '摄像头错误: ' + (error.name || error.message);
+                statusText.textContent = errorMsg;
+            }
+            
+            // 显示开始按钮，允许重试
+            const startBtn = document.getElementById('start-guardian-btn');
+            if (startBtn) {
+                startBtn.style.display = 'block';
             }
         }
     }
