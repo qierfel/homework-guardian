@@ -6,7 +6,7 @@
 const APP_CONFIG = {
     // OpenRouter API Key（用于 AI 问答）
     get openrouterKey() {
-        return localStorage.getItem('openrouter_api_key') || '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';
+        return localStorage.getItem('openrouter_api_key') || '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';
     },
     
     // 阿里云百炼 API Key（用于语音识别）

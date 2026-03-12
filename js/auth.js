@@ -315,7 +315,7 @@ class AuthManager {
                     localStorage.setItem('openrouter_api_key', data.openrouter_key);
                 } else {
                     // 数据库没有 Key，使用默认
-                    localStorage.setItem('openrouter_api_key', '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');
+                    localStorage.setItem('openrouter_api_key', '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');
                 }
                 
                 if (data.bailian_key) {
@@ -338,7 +338,7 @@ class AuthManager {
      * 设置默认 API Keys
      */
     setDefaultKeys() {
-        localStorage.setItem('openrouter_api_key', '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');
+        localStorage.setItem('openrouter_api_key', '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');
         localStorage.setItem('bailian_api_key', 'sk-sp-e2181324b29a4e909d569e3cc03283ec');
         console.log('已设置默认 API Keys');
     }
