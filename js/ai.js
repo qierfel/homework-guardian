@@ -157,7 +157,9 @@ class AIAssistant {
             throw new Error('请先设置 API Key');
         }
         
-        // 如果是纯文本问题且需要联网，尝试使用 Perplexity
+        // 联网搜索功能已禁用（需要时可重新启用）
+        // 原因：Perplexity 模型可能不可用，影响正常回答
+        /*
         if (!imageBase64 && this.needsOnlineSearch(question)) {
             window.showToast('🌐 检测到需要联网信息...');
             
@@ -165,7 +167,6 @@ class AIAssistant {
             if (onlineAnswer) {
                 window.showToast('✅ 已从网络获取最新信息');
                 
-                // 将联网搜索的结果也加入历史
                 this.conversationHistory.push({
                     role: 'user',
                     content: question
@@ -175,7 +176,6 @@ class AIAssistant {
                     content: onlineAnswer
                 });
                 
-                // 限制历史长度
                 if (this.conversationHistory.length > this.maxHistoryLength * 2) {
                     this.conversationHistory = this.conversationHistory.slice(-this.maxHistoryLength * 2);
                 }
@@ -183,9 +183,9 @@ class AIAssistant {
                 return onlineAnswer;
             }
             
-            // 如果 Perplexity 失败，继续使用普通模式（不额外提示，避免干扰）
             console.log('⚠️ 联网搜索失败，降级到本地知识模式');
         }
+        */
 
         let content;
 
