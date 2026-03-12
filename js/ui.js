@@ -217,13 +217,30 @@ class UIController {
      */
     async handlePhotoQuestion() {
         try {
+            console.log('📷 开始拍照提问');
+            
             // 获取 video 和 canvas 元素
             const video = document.getElementById('camera-video');
             const canvas = document.getElementById('camera-canvas');
             
+            console.log('video元素:', video);
+            console.log('canvas元素:', canvas);
+            
+            if (!video) {
+                throw new Error('找不到摄像头元素');
+            }
+            
+            if (!canvas) {
+                throw new Error('找不到画布元素');
+            }
+            
             // 检查摄像头是否已启动
-            if (!video || !video.videoWidth || !video.videoHeight) {
+            console.log('video.videoWidth:', video.videoWidth);
+            console.log('video.videoHeight:', video.videoHeight);
+            
+            if (!video.videoWidth || !video.videoHeight) {
                 window.showToast('摄像头未启动，正在启动...');
+                console.log('尝试启动摄像头...');
                 
                 // 尝试启动摄像头
                 try {
@@ -232,15 +249,20 @@ class UIController {
                     });
                     video.srcObject = stream;
                     await video.play();
+                    console.log('摄像头已启动，等待就绪...');
                     
                     // 等待一会儿让摄像头就绪
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    console.log('就绪后 - video.videoWidth:', video.videoWidth);
+                    console.log('就绪后 - video.videoHeight:', video.videoHeight);
                     
                     if (!video.videoWidth || !video.videoHeight) {
-                        throw new Error('摄像头启动失败');
+                        throw new Error('摄像头启动失败：无法获取视频尺寸');
                     }
                 } catch (err) {
-                    throw new Error('无法启动摄像头: ' + err.message);
+                    console.error('启动摄像头失败:', err);
+                    throw new Error('无法启动摄像头: ' + err.name + ' - ' + err.message);
                 }
             }
             

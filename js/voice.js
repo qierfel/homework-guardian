@@ -18,9 +18,15 @@ class VoiceManager {
             this.recognition.continuous = false;
             this.recognition.interimResults = false;
             
-            console.log('语音管理器已初始化 (Web Speech API)');
+            console.log('✅ 语音管理器已初始化 (Web Speech API)');
+            console.log('浏览器:', navigator.userAgent);
         } else {
-            console.warn('浏览器不支持语音识别');
+            console.warn('❌ 浏览器不支持语音识别');
+            console.log('User Agent:', navigator.userAgent);
+            // 显示提示
+            setTimeout(() => {
+                window.showToast('当前浏览器不支持语音识别，请使用 Chrome 或 Edge');
+            }, 2000);
         }
     }
 
