@@ -12,6 +12,10 @@ class AIAssistant {
         this.systemPrompt = `你是一个耐心友善的AI家教，正在辅导一个小学生写作业。
 用简单易懂的语言解释知识点，多鼓励，不要直接给答案，而是引导孩子思考。
 回答要简洁，适合语音播报，每次回答控制在100字以内。`;
+        
+        // 对话历史（支持连续对话）
+        this.conversationHistory = [];
+        this.maxHistoryLength = 10; // 保留最近10轮对话
     }
 
     /**
@@ -38,6 +42,21 @@ class AIAssistant {
      */
     hasApiKey() {
         return !!this.getApiKey();
+    }
+
+    /**
+     * 清空对话历史
+     */
+    clearHistory() {
+        this.conversationHistory = [];
+        console.log('✅ 对话历史已清空');
+    }
+
+    /**
+     * 获取对话轮数
+     */
+    getConversationCount() {
+        return this.conversationHistory.length / 2;
     }
 
     /**
@@ -72,19 +91,41 @@ class AIAssistant {
             content = question;
         }
 
+        // 构建消息数组：系统提示 + 历史对话 + 当前问题
         const messages = [
             {
                 role: 'system',
                 content: this.systemPrompt
             },
+            ...this.conversationHistory, // 添加历史对话
             {
                 role: 'user',
                 content: content
             }
         ];
 
+        console.log('发送消息（含历史）:', messages.length, '条');
+
         try {
             const response = await this.callAPI(messages);
+            
+            // 保存到历史记录
+            this.conversationHistory.push({
+                role: 'user',
+                content: imageBase64 ? question : content // 图片消息只保存文字部分（避免历史太大）
+            });
+            this.conversationHistory.push({
+                role: 'assistant',
+                content: response
+            });
+            
+            // 限制历史长度（保留最近的对话）
+            if (this.conversationHistory.length > this.maxHistoryLength * 2) {
+                this.conversationHistory = this.conversationHistory.slice(-this.maxHistoryLength * 2);
+                console.log('历史记录已截断，保留最近', this.maxHistoryLength, '轮对话');
+            }
+            
+            console.log('当前历史记录:', this.conversationHistory.length / 2, '轮对话');
             
             // 检测是否涉及汉字书写
             if (question.includes('怎么写') || question.includes('笔顺') || question.includes('田字格') || 

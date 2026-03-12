@@ -91,6 +91,12 @@ class UIController {
         if (uploadInput) {
             uploadInput.addEventListener('change', (e) => this.handleImageUpload(e));
         }
+        
+        // 清空对话历史
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+        if (clearHistoryBtn) {
+            clearHistoryBtn.addEventListener('click', () => this.clearConversationHistory());
+        }
 
         // 文字提问
         const sendBtn = document.getElementById('send-text-btn');
@@ -478,6 +484,9 @@ class UIController {
                 if (window.voiceManager) {
                     window.voiceManager.speak(answer);
                 }
+                
+                // 更新对话计数
+                this.updateConversationCount();
             }
             
             console.log('✅ 图片提问完成');
@@ -768,9 +777,10 @@ class UIController {
             // 语音播报
             window.voiceManager.speak(answer);
             
-            // 更新统计
+            // 更新统计和对话计数
             this.questionCount++;
             this.updateReportStats();
+            this.updateConversationCount();
             
             // 记录时间线
             this.addTimelineEvent('提问', question);
@@ -928,6 +938,46 @@ window.showHanziWriter = function(character) {
     grid.onclick = () => writer.animateCharacter();
     document.getElementById('hanzi-hint').textContent = character + ' - 点击重播';
 }
+
+/**
+ * 更新对话计数
+ */
+UIController.prototype.updateConversationCount = function() {
+    const countElement = document.getElementById('conversation-count');
+    if (countElement && window.aiAssistant) {
+        const count = window.aiAssistant.getConversationCount();
+        countElement.textContent = `连续对话: ${count} 轮`;
+    }
+};
+
+/**
+ * 清空对话历史
+ */
+UIController.prototype.clearConversationHistory = function() {
+    if (!window.aiAssistant) return;
+    
+    const confirmed = confirm('确定要清空对话历史吗？AI 将不再记得之前的内容。');
+    if (!confirmed) return;
+    
+    // 清空 AI 历史
+    window.aiAssistant.clearHistory();
+    
+    // 清空聊天消息
+    const messagesContainer = document.getElementById('chat-messages');
+    if (messagesContainer) {
+        messagesContainer.innerHTML = `
+            <div class="welcome-message">
+                <p>👋 对话已重置</p>
+                <p>可以开始新的话题了~</p>
+            </div>
+        `;
+    }
+    
+    // 更新计数
+    this.updateConversationCount();
+    
+    window.showToast('✅ 对话历史已清空');
+};
 
 /**
  * 全屏查看图片
