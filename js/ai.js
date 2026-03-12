@@ -121,7 +121,18 @@ class AIAssistant {
      * @returns {Promise<string>} AI 回答
      */
     async askQuestionWithImage(question, imageBase64) {
-        return await this.askQuestion(question, imageBase64);
+        console.log('📸 askQuestionWithImage 被调用');
+        console.log('问题:', question);
+        console.log('图片大小:', (imageBase64.length / 1024).toFixed(2), 'KB');
+        
+        try {
+            const result = await this.askQuestion(question, imageBase64);
+            console.log('✅ askQuestion 返回成功');
+            return result;
+        } catch (error) {
+            console.error('❌ askQuestion 调用失败:', error);
+            throw error;
+        }
     }
 
     /**

@@ -295,24 +295,40 @@ class UIController {
             window.showLoading('AI 正在分析图片...');
             
             // 调用 AI 分析
-            const answer = await window.aiAssistant.askQuestionWithImage('请帮我看看这道题', imageBase64);
+            console.log('准备调用 AI，图片大小:', (imageBase64.length / 1024).toFixed(2), 'KB');
+            console.log('调用 askQuestionWithImage...');
+            
+            let answer;
+            try {
+                answer = await window.aiAssistant.askQuestionWithImage('请帮我看看这道题', imageBase64);
+                console.log('AI 返回结果:', answer);
+            } catch (aiError) {
+                console.error('AI 调用失败:', aiError);
+                throw new Error('AI 分析失败: ' + aiError.message);
+            }
             
             // 隐藏加载
             window.hideLoading();
             
             // 显示 AI 回复
-            this.addChatMessage(answer);
-            
-            // 播放语音（如果可用）
-            if (window.voiceManager) {
-                window.voiceManager.speak(answer);
+            if (answer) {
+                this.addChatMessage(answer);
+                console.log('已显示 AI 回复');
+                
+                // 播放语音（如果可用）
+                if (window.voiceManager) {
+                    window.voiceManager.speak(answer);
+                }
+            } else {
+                throw new Error('AI 返回空结果');
             }
             
-            console.log('拍照提问完成');
+            console.log('✅ 拍照提问完成');
         } catch (error) {
             window.hideLoading();
+            console.error('❌ 拍照提问失败:', error);
+            console.error('错误栈:', error.stack);
             window.showToast('拍照失败: ' + error.message);
-            console.error('拍照提问失败:', error);
         }
     }
 
