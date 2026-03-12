@@ -49,6 +49,14 @@ class UIController {
             voiceBtn.addEventListener('mouseup', () => this.stopVoiceInput());
         }
 
+        // 拍照提问按钮
+        const photoBtn = document.getElementById('photo-ask-btn');
+        if (photoBtn) {
+            photoBtn.addEventListener('click', async () => {
+                await this.handlePhotoQuestion();
+            });
+        }
+
         // 文字提问
         const sendBtn = document.getElementById('send-text-btn');
         const textInput = document.getElementById('text-input');
@@ -202,6 +210,60 @@ class UIController {
         voiceText.textContent = '按住说话';
 
         window.voiceManager.stopListening();
+    }
+
+    /**
+     * 处理拍照提问
+     */
+    async handlePhotoQuestion() {
+        try {
+            window.showLoading('拍照中...');
+            
+            // 获取 video 和 canvas 元素
+            const video = document.getElementById('camera-video');
+            const canvas = document.getElementById('camera-canvas');
+            
+            if (!video || !video.videoWidth || !video.videoHeight) {
+                throw new Error('摄像头未就绪，请先启动守护功能');
+            }
+            
+            // 设置 canvas 尺寸
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // 绘制当前帧
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // 转换为 base64
+            const imageBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            
+            window.hideLoading();
+            
+            // 显示提示消息
+            this.addChatMessage('📷 [图片]', true);
+            
+            // 显示加载
+            window.showLoading('AI 正在分析图片...');
+            
+            // 调用 AI 分析
+            const answer = await window.aiAssistant.askQuestionWithImage('请帮我看看这道题', imageBase64);
+            
+            // 隐藏加载
+            window.hideLoading();
+            
+            // 显示 AI 回复
+            this.addChatMessage(answer);
+            
+            // 播放语音
+            window.voiceManager.speak(answer);
+            
+            console.log('拍照提问完成');
+        } catch (error) {
+            window.hideLoading();
+            window.showToast('拍照失败: ' + error.message);
+            console.error('拍照提问失败:', error);
+        }
     }
 
     /**

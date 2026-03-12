@@ -111,6 +111,16 @@ class AIAssistant {
     }
 
     /**
+     * 带图片提问（便捷方法）
+     * @param {string} question - 问题文本
+     * @param {string} imageBase64 - 图片 base64
+     * @returns {Promise<string>} AI 回答
+     */
+    async askQuestionWithImage(question, imageBase64) {
+        return await this.askQuestion(question, imageBase64);
+    }
+
+    /**
      * 分析作业质量
      * @param {string} imageBase64 - 作业图片
      * @returns {Promise<Object>} 分析结果 { score, feedback }
