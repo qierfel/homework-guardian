@@ -10,15 +10,27 @@ class UIController {
         this.distractionCount = 0;
         this.questionCount = 0;
         this.timeline = [];
+        this.initialized = false;
     }
 
     /**
      * 初始化 UI
      */
     init() {
-        this.bindEvents();
-        this.updateReportDate();
-        console.log('UI 控制器初始化完成');
+        if (this.initialized) {
+            console.log('UI 控制器已经初始化，跳过');
+            return;
+        }
+        
+        try {
+            this.bindEvents();
+            this.updateReportDate();
+            this.initialized = true;
+            console.log('✅ UI 控制器初始化完成');
+        } catch (error) {
+            console.error('❌ UI 控制器初始化失败:', error);
+            throw error;
+        }
     }
 
     /**
