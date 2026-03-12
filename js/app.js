@@ -126,10 +126,17 @@ class HomeworkGuardianApp {
             
             // 1. 初始化 UI 控制器（绑定所有按钮事件）
             console.log('1. 初始化 UI 控制器');
-            if (window.uiController && typeof window.uiController.init === 'function') {
+            console.log('window.uiController:', window.uiController);
+            console.log('typeof window.uiController:', typeof window.uiController);
+            
+            if (!window.uiController) {
+                throw new Error('UIController 未加载！请检查 ui.js 是否正确加载');
+            }
+            
+            if (typeof window.uiController.init === 'function') {
                 window.uiController.init();
             } else {
-                console.warn('uiController 未就绪，跳过初始化');
+                console.warn('uiController.init 不是函数，跳过初始化');
             }
             
             // 2. 直接启动摄像头（最简单方式）

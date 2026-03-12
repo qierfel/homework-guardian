@@ -927,12 +927,12 @@ window.showHanziWriter = function(character) {
     // 点击重播
     grid.onclick = () => writer.animateCharacter();
     document.getElementById('hanzi-hint').textContent = character + ' - 点击重播';
-};
+}
 
 /**
  * 全屏查看图片
  */
-window.UIController.prototype.showImageFullscreen = function(imageBase64) {
+UIController.prototype.showImageFullscreen = function(imageBase64) {
     // 创建全屏覆盖层
     const overlay = document.createElement('div');
     overlay.style.cssText = `
@@ -969,4 +969,9 @@ window.UIController.prototype.showImageFullscreen = function(imageBase64) {
 };
 
 // 导出全局实例
-window.uiController = new UIController();
+try {
+    window.uiController = new UIController();
+    console.log('✅ UIController 实例已创建:', window.uiController);
+} catch (error) {
+    console.error('❌ 创建 UIController 失败:', error);
+}
