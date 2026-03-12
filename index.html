@@ -13,36 +13,69 @@
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
 </head>
 <body>
-    <!-- 设置页面（首次使用） -->
-    <div id="setup-screen" class="screen">
-        <div class="setup-container">
-            <h1>🎓 作业守护者</h1>
-            <p class="subtitle">AI 驱动的智能辅导助手</p>
+    <!-- 登录/注册页面 -->
+    <div id="auth-screen" class="screen">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1>🎓 作业守护者</h1>
+                <p class="subtitle">AI 驱动的智能辅导助手</p>
+            </div>
             
-            <div class="setup-form">
-                <label for="api-key">OpenRouter API Key</label>
-                <input type="password" id="api-key" placeholder="输入你的 API Key">
-                <small>获取方式：访问 openrouter.ai</small>
+            <!-- 登录表单 -->
+            <div id="login-form" class="auth-form active">
+                <h2>家长登录</h2>
                 
-                <label for="bailian-key">阿里云百炼 API Key（语音识别）</label>
-                <input type="password" id="bailian-key" placeholder="输入百炼 API Key">
-                <small>获取方式：访问 dashscope.aliyun.com</small>
+                <div class="form-group">
+                    <label for="login-email">邮箱</label>
+                    <input type="email" id="login-email" placeholder="请输入邮箱" autocomplete="email" required>
+                </div>
                 
-                <label for="child-name">孩子名字（可选）</label>
-                <input type="text" id="child-name" placeholder="例如：小明">
+                <div class="form-group">
+                    <label for="login-password">密码</label>
+                    <input type="password" id="login-password" placeholder="请输入密码" autocomplete="current-password" required>
+                </div>
                 
-                <button id="save-settings" class="primary-btn">开始使用</button>
+                <button id="login-btn" class="primary-btn">登录</button>
                 
-                <button id="test-tts-btn" onclick="
- window.speechSynthesis.cancel();
- var u = new SpeechSynthesisUtterance('你好，我是作业守护者');
- u.lang = 'zh-CN';
- u.volume = 1.0;
- window.speechSynthesis.speak(u);
- this.textContent = '已点击，等待声音...';
-" style="margin-top:10px;width:100%;padding:10px;background:#666;color:white;border:none;border-radius:8px;font-size:16px">
- 🔊 点击测试语音
-</button>
+                <div class="auth-links">
+                    <a href="#" id="show-register" class="link">还没有账号？立即注册</a>
+                    <a href="#" id="forgot-password" class="link">忘记密码？</a>
+                </div>
+            </div>
+            
+            <!-- 注册表单 -->
+            <div id="register-form" class="auth-form">
+                <h2>家长注册</h2>
+                
+                <div class="form-group">
+                    <label for="register-email">邮箱</label>
+                    <input type="email" id="register-email" placeholder="请输入邮箱" autocomplete="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="register-password">密码</label>
+                    <input type="password" id="register-password" placeholder="至少6位密码" autocomplete="new-password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="register-password-confirm">确认密码</label>
+                    <input type="password" id="register-password-confirm" placeholder="再次输入密码" autocomplete="new-password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="register-child-name">孩子名字（可选）</label>
+                    <input type="text" id="register-child-name" placeholder="例如：小明">
+                </div>
+                
+                <button id="register-btn" class="primary-btn">注册</button>
+                
+                <div class="auth-links">
+                    <a href="#" id="show-login" class="link">已有账号？立即登录</a>
+                </div>
+            </div>
+            
+            <div class="auth-footer">
+                <p>使用本应用即表示您同意我们的<a href="#" class="link">隐私政策</a></p>
             </div>
         </div>
     </div>
@@ -218,6 +251,8 @@ alert('Key前缀: ' + key.substring(0,8));
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js"></script>
 
     <!-- 应用脚本 -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/camera.js"></script>
     <script src="js/attention.js"></script>
     <script src="js/voice.js"></script>
