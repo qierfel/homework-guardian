@@ -53,8 +53,20 @@ class UIController {
         const photoBtn = document.getElementById('photo-ask-btn');
         if (photoBtn) {
             photoBtn.addEventListener('click', async () => {
-                await this.handlePhotoQuestion();
+                await this.showCameraPreview();
             });
+        }
+        
+        // 问问页面的摄像头控制
+        const questionToggleBtn = document.getElementById('question-toggle-camera');
+        const questionCloseBtn = document.getElementById('question-close-camera');
+        
+        if (questionToggleBtn) {
+            questionToggleBtn.addEventListener('click', () => this.toggleQuestionCamera());
+        }
+        
+        if (questionCloseBtn) {
+            questionCloseBtn.addEventListener('click', () => this.closeCameraPreview());
         }
 
         // 文字提问
@@ -213,6 +225,115 @@ class UIController {
     }
 
     /**
+     * 显示摄像头预览（问问页面）
+     */
+    async showCameraPreview() {
+        try {
+            const preview = document.getElementById('question-camera-preview');
+            const video = document.getElementById('question-camera-video');
+            
+            if (!preview || !video) {
+                throw new Error('找不到预览元素');
+            }
+            
+            // 显示预览区
+            preview.style.display = 'block';
+            
+            // 如果已经有视频流，直接使用
+            if (video.srcObject) {
+                return;
+            }
+            
+            // 启动摄像头
+            window.showToast('正在启动摄像头...');
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: this.questionCameraFacing || 'user' }
+            });
+            
+            video.srcObject = stream;
+            this.questionCameraStream = stream;
+            this.questionCameraFacing = 'user';
+            
+            await video.play();
+            window.showToast('摄像头已启动，调整角度后点击"拍照提问"');
+            
+            // 改变按钮文字
+            const photoBtn = document.getElementById('photo-ask-btn');
+            if (photoBtn) {
+                photoBtn.textContent = '📸 拍照并提问';
+                photoBtn.onclick = () => this.handlePhotoQuestion();
+            }
+            
+        } catch (error) {
+            console.error('启动摄像头失败:', error);
+            window.showToast('摄像头启动失败: ' + error.message);
+        }
+    }
+
+    /**
+     * 切换前后摄像头（问问页面）
+     */
+    async toggleQuestionCamera() {
+        try {
+            const video = document.getElementById('question-camera-video');
+            if (!video) return;
+            
+            // 停止当前流
+            if (this.questionCameraStream) {
+                this.questionCameraStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // 切换方向
+            this.questionCameraFacing = this.questionCameraFacing === 'user' ? 'environment' : 'user';
+            
+            // 启动新摄像头
+            window.showToast('切换中...');
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: this.questionCameraFacing }
+            });
+            
+            video.srcObject = stream;
+            this.questionCameraStream = stream;
+            await video.play();
+            
+            window.showToast(`已切换到${this.questionCameraFacing === 'user' ? '前置' : '后置'}摄像头`);
+        } catch (error) {
+            console.error('切换摄像头失败:', error);
+            window.showToast('切换失败');
+            // 恢复原方向
+            this.questionCameraFacing = this.questionCameraFacing === 'user' ? 'environment' : 'user';
+        }
+    }
+
+    /**
+     * 关闭摄像头预览
+     */
+    closeCameraPreview() {
+        const preview = document.getElementById('question-camera-preview');
+        const video = document.getElementById('question-camera-video');
+        
+        if (this.questionCameraStream) {
+            this.questionCameraStream.getTracks().forEach(track => track.stop());
+            this.questionCameraStream = null;
+        }
+        
+        if (video) {
+            video.srcObject = null;
+        }
+        
+        if (preview) {
+            preview.style.display = 'none';
+        }
+        
+        // 恢复按钮
+        const photoBtn = document.getElementById('photo-ask-btn');
+        if (photoBtn) {
+            photoBtn.textContent = '📷 拍照提问';
+            photoBtn.onclick = () => this.showCameraPreview();
+        }
+    }
+
+    /**
      * 处理拍照提问
      */
     async handlePhotoQuestion() {
@@ -220,11 +341,17 @@ class UIController {
             console.log('📷 开始拍照提问');
             
             // 显示加载提示
-            window.showLoading('准备拍照...');
+            window.showLoading('拍照中...');
             
-            // 获取 video 和 canvas 元素
-            const video = document.getElementById('camera-video');
-            const canvas = document.getElementById('camera-canvas');
+            // 优先使用问问页面的摄像头预览
+            let video = document.getElementById('question-camera-video');
+            let canvas = document.getElementById('camera-canvas');
+            
+            // 如果问问页面没有摄像头，使用守护页面的
+            if (!video || !video.srcObject) {
+                console.log('问问页面无摄像头，使用守护页面的');
+                video = document.getElementById('camera-video');
+            }
             
             console.log('video元素:', video);
             console.log('canvas元素:', canvas);

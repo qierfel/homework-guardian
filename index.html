@@ -154,6 +154,19 @@ alert('Key前缀: ' + key.substring(0,8));
 🌐 测试Groq
 </button>
             
+            <!-- 摄像头预览区（问问页面） -->
+            <div id="question-camera-preview" style="display:none;width:100%;max-width:300px;margin:10px auto;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+                <video id="question-camera-video" autoplay playsinline muted style="width:100%;display:block;"></video>
+                <div style="display:flex;gap:10px;padding:10px;background:rgba(0,0,0,0.5);">
+                    <button id="question-toggle-camera" style="flex:1;background:#4CAF50;color:white;border:none;padding:8px;border-radius:8px;cursor:pointer;">
+                        🔄 切换
+                    </button>
+                    <button id="question-close-camera" style="flex:1;background:#f44336;color:white;border:none;padding:8px;border-radius:8px;cursor:pointer;">
+                        ✕ 关闭
+                    </button>
+                </div>
+            </div>
+            
             <div class="chat-container">
                 <div id="chat-messages" class="chat-messages">
                     <div class="welcome-message">
