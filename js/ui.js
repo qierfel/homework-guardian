@@ -65,7 +65,32 @@ class UIController {
         const photoBtn = document.getElementById('photo-ask-btn');
         if (photoBtn) {
             photoBtn.addEventListener('click', () => {
-                this.showPhotoOptions();
+                this.showPhotoChoiceModal();
+            });
+        }
+        
+        // 拍照选择弹窗按钮
+        const choiceCamera = document.getElementById('choice-camera');
+        const choiceUpload = document.getElementById('choice-upload');
+        const choiceCancel = document.getElementById('choice-cancel');
+        
+        if (choiceCamera) {
+            choiceCamera.addEventListener('click', () => {
+                this.hidePhotoChoiceModal();
+                this.openFullscreenCamera();
+            });
+        }
+        
+        if (choiceUpload) {
+            choiceUpload.addEventListener('click', () => {
+                this.hidePhotoChoiceModal();
+                document.getElementById('upload-image-input').click();
+            });
+        }
+        
+        if (choiceCancel) {
+            choiceCancel.addEventListener('click', () => {
+                this.hidePhotoChoiceModal();
             });
         }
         
@@ -266,18 +291,35 @@ class UIController {
     }
 
     /**
-     * 显示拍照选项（拍照 or 上传）
+     * 显示拍照选择弹窗
      */
-    showPhotoOptions() {
-        // 创建一个简单的选择对话框
-        const choice = confirm('选择图片来源：\n\n确定 = 📷 拍照\n取消 = 📁 从相册选择');
-        
-        if (choice) {
-            // 拍照
-            this.openFullscreenCamera();
-        } else {
-            // 上传图片
-            document.getElementById('upload-image-input').click();
+    showPhotoChoiceModal() {
+        const modal = document.getElementById('photo-choice-modal');
+        if (modal) {
+            modal.style.display = 'block';
+            
+            // 添加按钮悬停效果
+            const buttons = modal.querySelectorAll('button[id^="choice-"]');
+            buttons.forEach(btn => {
+                if (btn.id !== 'choice-cancel') {
+                    btn.onmouseenter = () => {
+                        btn.style.transform = 'scale(1.05)';
+                    };
+                    btn.onmouseleave = () => {
+                        btn.style.transform = 'scale(1)';
+                    };
+                }
+            });
+        }
+    }
+
+    /**
+     * 隐藏拍照选择弹窗
+     */
+    hidePhotoChoiceModal() {
+        const modal = document.getElementById('photo-choice-modal');
+        if (modal) {
+            modal.style.display = 'none';
         }
     }
 

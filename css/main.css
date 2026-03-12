@@ -502,33 +502,70 @@ body {
 }
 
 .voice-btn {
-    background: var(--primary-color);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
-    border-radius: 16px;
-    padding: 20px;
+    border-radius: 20px;
+    padding: 18px 24px;
     color: white;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    transition: all 0.2s;
+    gap: 10px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.voice-btn:active {
+    transform: scale(0.95);
+}
+
+.voice-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.voice-btn:active::before {
+    width: 300px;
+    height: 300px;
 }
 
 .voice-btn.listening {
-    background: var(--danger-color);
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     animation: recording 1.5s infinite;
+    box-shadow: 0 4px 20px rgba(245, 87, 108, 0.6);
 }
 
 @keyframes recording {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
+    0%, 100% { 
+        transform: scale(1); 
+        box-shadow: 0 4px 20px rgba(245, 87, 108, 0.6);
+    }
+    50% { 
+        transform: scale(1.05); 
+        box-shadow: 0 8px 30px rgba(245, 87, 108, 0.8);
+    }
 }
 
 .voice-icon {
-    font-size: 28px;
+    font-size: 24px;
+    z-index: 1;
+}
+
+.voice-text {
+    z-index: 1;
 }
 
 .text-input-group {
@@ -764,4 +801,14 @@ body {
     .message {
         max-width: 90%;
     }
+}
+
+/* 拍照按钮悬停效果 */
+.photo-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(245, 87, 108, 0.5);
+}
+
+.photo-btn:active {
+    transform: translateY(0);
 }
