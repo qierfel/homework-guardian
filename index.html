@@ -89,6 +89,13 @@
                 <video id="camera-video" autoplay playsinline></video>
                 <canvas id="camera-canvas" style="display:none;"></canvas>
                 
+                <!-- 开始守护按钮 -->
+                <div id="start-guardian-btn" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100;">
+                    <button onclick="window.app.startGuardian()" style="background:#4CAF50;color:white;border:none;border-radius:20px;padding:20px 40px;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(76,175,80,0.4);">
+                        👁️ 开始守护
+                    </button>
+                </div>
+                
                 <div class="attention-overlay">
                     <div class="status-badge" id="attention-status">
                         <span class="status-icon">⏳</span>

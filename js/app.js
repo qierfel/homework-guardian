@@ -105,6 +105,20 @@ class HomeworkGuardianApp {
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('main-screen').classList.remove('hidden');
 
+        // 不自动初始化，等用户点击"开始守护"按钮
+        console.log('已进入主界面，等待用户启动守护');
+    }
+
+    /**
+     * 开始守护（由用户点击触发）
+     */
+    async startGuardian() {
+        // 隐藏开始按钮
+        const startBtn = document.getElementById('start-guardian-btn');
+        if (startBtn) {
+            startBtn.style.display = 'none';
+        }
+
         // 初始化各模块
         await this.initModules();
     }
