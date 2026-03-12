@@ -25,7 +25,7 @@ class AIAssistant {
         
         // 对话历史（支持连续对话）
         this.conversationHistory = [];
-        this.maxHistoryLength = 10; // 保留最近10轮对话
+        this.maxHistoryLength = 50; // 保留最近50轮对话（支持更长的连续对话）
     }
 
     /**
