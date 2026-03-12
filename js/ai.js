@@ -7,12 +7,11 @@ class AIAssistant {
     constructor() {
         this.apiKey = '';
         this.apiEndpoint = 'https://openrouter.ai/api/v1/chat/completions';
-        this.textModel = 'anthropic/claude-sonnet-4-5'; // 文字问答
-        this.visionModel = 'qwen/qwen3-vl-8b-instruct'; // 图片识别（便宜）
-        this.model = this.textModel; // 默认模型
+        // 统一使用 qwen-vl-plus：支持图文、在中国可用、教育风格好
+        this.model = 'qwen/qwen-vl-plus';
         this.systemPrompt = `你是一个耐心友善的AI家教，正在辅导一个小学生写作业。
 用简单易懂的语言解释知识点，多鼓励，不要直接给答案，而是引导孩子思考。
-回答要简洁，适合语音播报，每次回答控制在50字以内。`;
+回答要简洁，适合语音播报，每次回答控制在100字以内。`;
     }
 
     /**
@@ -53,11 +52,9 @@ class AIAssistant {
         }
 
         let content;
-        let useModel = this.textModel; // 默认文字模型
 
-        // 如果有图片，使用 vision 模型和图片格式
+        // 如果有图片，使用图文格式
         if (imageBase64) {
-            useModel = this.visionModel; // 切换到 vision 模型
             content = [
                 {
                     type: 'text',
@@ -87,7 +84,7 @@ class AIAssistant {
         ];
 
         try {
-            const response = await this.callAPI(messages, useModel);
+            const response = await this.callAPI(messages);
             
             // 检测是否涉及汉字书写
             if (question.includes('怎么写') || question.includes('笔顺') || question.includes('田字格') || 
