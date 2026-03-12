@@ -85,6 +85,83 @@ class AIAssistant {
     }
 
     /**
+     * 检测是否是英文单词查询
+     */
+    isEnglishDictionaryQuery(question) {
+        // 检测英文字典查询的模式
+        const patterns = [
+            /^([a-zA-Z]+)是什么意思/,           // "hello是什么意思"
+            /^([a-zA-Z]+)的意思/,               // "hello的意思"
+            /^([a-zA-Z]+)的中文/,               // "hello的中文"
+            /什么意思.*?([a-zA-Z]+)/,           // "什么意思hello"
+            /查.*?([a-zA-Z]+)/                  // "查hello"
+        ];
+        
+        for (const pattern of patterns) {
+            const match = question.match(pattern);
+            if (match) {
+                // 提取英文单词（取最长的匹配）
+                const word = match[1] || match[2];
+                if (word && word.length > 1) { // 至少2个字母
+                    return word.toLowerCase();
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * 使用 Free Dictionary API 查询英文单词
+     */
+    async lookupEnglishWord(word) {
+        try {
+            console.log('📚 查询英文单词:', word);
+            
+            const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    return null; // 单词不存在
+                }
+                throw new Error(`Dictionary API 错误: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            const entry = data[0];
+            
+            // 提取信息
+            const phonetic = entry.phonetic || entry.phonetics?.[0]?.text || '';
+            const meanings = entry.meanings.slice(0, 2); // 只取前2个词性
+            
+            // 格式化回答
+            let answer = `📖 ${entry.word}\n`;
+            if (phonetic) {
+                answer += `【音标】${phonetic}\n\n`;
+            }
+            
+            meanings.forEach((meaning, idx) => {
+                answer += `【${meaning.partOfSpeech}】\n`;
+                const defs = meaning.definitions.slice(0, 2); // 每个词性最多2个释义
+                defs.forEach((def, defIdx) => {
+                    answer += `${idx * 2 + defIdx + 1}. ${def.definition}\n`;
+                    if (def.example) {
+                        answer += `   例句: ${def.example}\n`;
+                    }
+                });
+                answer += '\n';
+            });
+            
+            console.log('✅ 查询成功');
+            return answer.trim();
+            
+        } catch (error) {
+            console.error('❌ 英文字典查询失败:', error);
+            return null;
+        }
+    }
+
+    /**
      * 检测问题是否需要联网搜索
      */
     needsOnlineSearch(question) {
@@ -167,6 +244,39 @@ class AIAssistant {
     async askQuestion(question, imageBase64 = null) {
         if (!this.hasApiKey()) {
             throw new Error('请先设置 API Key');
+        }
+        
+        // 如果是英文单词查询，使用字典API
+        if (!imageBase64) {
+            const englishWord = this.isEnglishDictionaryQuery(question);
+            if (englishWord) {
+                window.showToast('📚 查询英文字典...');
+                const dictionaryAnswer = await this.lookupEnglishWord(englishWord);
+                
+                if (dictionaryAnswer) {
+                    window.showToast('✅ 查询成功');
+                    
+                    // 加入对话历史
+                    this.conversationHistory.push({
+                        role: 'user',
+                        content: question
+                    });
+                    this.conversationHistory.push({
+                        role: 'assistant',
+                        content: dictionaryAnswer
+                    });
+                    
+                    // 限制历史长度
+                    if (this.conversationHistory.length > this.maxHistoryLength * 2) {
+                        this.conversationHistory = this.conversationHistory.slice(-this.maxHistoryLength * 2);
+                    }
+                    
+                    return dictionaryAnswer;
+                } else {
+                    // 字典查不到，降级到AI回答
+                    console.log('⚠️ 字典未找到该单词，使用AI回答');
+                }
+            }
         }
         
         // 联网搜索功能已禁用（需要时可重新启用）
