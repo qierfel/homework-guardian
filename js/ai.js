@@ -222,7 +222,9 @@ class AIAssistant {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.getApiKey()}`
+                    'Authorization': `Bearer ${this.getApiKey()}`,
+                    'HTTP-Referer': window.location.origin,
+                    'X-Title': 'Homework Guardian'
                 },
                 body: JSON.stringify(requestBody)
             });
