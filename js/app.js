@@ -8,6 +8,8 @@ class HomeworkGuardianApp {
         this.isSetupComplete = false;
         this.attentionCheckInterval = null;
         this.lastAlertTime = 0;
+        this.currentStream = null;
+        this.facingMode = 'user'; // 'user' 前置, 'environment' 后置
     }
 
     /**
@@ -119,25 +121,32 @@ class HomeworkGuardianApp {
             startBtn.style.display = 'none';
         }
 
-        // 直接启动摄像头（最简单方式）
         try {
-            window.showLoading('启动摄像头...');
+            window.showLoading('初始化中...');
             
+            // 1. 初始化 UI 控制器（绑定所有按钮事件）
+            window.uiController.init();
+            
+            // 2. 直接启动摄像头（最简单方式）
             const video = document.getElementById('camera-video');
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'user' }
             });
             
             video.srcObject = stream;
+            this.currentStream = stream; // 保存 stream 供切换摄像头使用
             await video.play();
             
-            window.hideLoading();
-            window.showToast('摄像头已启动');
+            // 3. 绑定摄像头控制按钮
+            this.bindCameraControls();
             
-            // 启动注意力检测
+            // 4. 启动注意力检测
             await this.startAttentionMonitoring();
             
-            console.log('摄像头启动成功');
+            window.hideLoading();
+            window.showToast('系统已就绪');
+            
+            console.log('所有模块初始化完成');
         } catch (error) {
             window.hideLoading();
             window.showToast('摄像头错误: ' + error.name + ' ' + error.message);
@@ -208,23 +217,89 @@ class HomeworkGuardianApp {
     bindCameraControls() {
         // 切换摄像头
         const toggleBtn = document.getElementById('toggle-camera');
-        toggleBtn.addEventListener('click', async () => {
-            window.showLoading('切换中...');
-            await window.cameraManager.toggleCamera();
-            window.hideLoading();
-        });
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', async () => {
+                await this.toggleCamera();
+            });
+        }
 
         // 拍照分析作业
         const captureBtn = document.getElementById('capture-photo');
-        captureBtn.addEventListener('click', async () => {
-            try {
-                const imageBase64 = window.cameraManager.capturePhoto();
-                await this.analyzeHomework(imageBase64);
-            } catch (error) {
-                window.showToast('拍照失败: ' + error.message);
-                console.error(error);
+        if (captureBtn) {
+            captureBtn.addEventListener('click', async () => {
+                await this.capturePhoto();
+            });
+        }
+    }
+
+    /**
+     * 切换前后摄像头
+     */
+    async toggleCamera() {
+        try {
+            window.showLoading('切换中...');
+            
+            // 停止当前 stream
+            if (this.currentStream) {
+                this.currentStream.getTracks().forEach(track => track.stop());
             }
-        });
+            
+            // 切换 facingMode
+            this.facingMode = this.facingMode === 'user' ? 'environment' : 'user';
+            
+            // 启动新的摄像头
+            const video = document.getElementById('camera-video');
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: this.facingMode }
+            });
+            
+            video.srcObject = stream;
+            this.currentStream = stream;
+            await video.play();
+            
+            window.hideLoading();
+            window.showToast(`已切换到${this.facingMode === 'user' ? '前置' : '后置'}摄像头`);
+        } catch (error) {
+            window.hideLoading();
+            window.showToast('切换失败: ' + error.message);
+            console.error('切换摄像头失败:', error);
+            
+            // 切换失败，恢复原模式
+            this.facingMode = this.facingMode === 'user' ? 'environment' : 'user';
+        }
+    }
+
+    /**
+     * 拍照
+     */
+    async capturePhoto() {
+        try {
+            const video = document.getElementById('camera-video');
+            const canvas = document.getElementById('camera-canvas');
+            
+            if (!video.videoWidth || !video.videoHeight) {
+                throw new Error('摄像头未就绪');
+            }
+            
+            // 设置 canvas 尺寸
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // 绘制当前帧
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // 转换为 base64
+            const imageBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            
+            console.log('拍照成功，图片大小:', (imageBase64.length / 1024).toFixed(2), 'KB');
+            
+            // 分析作业
+            await this.analyzeHomework(imageBase64);
+        } catch (error) {
+            window.showToast('拍照失败: ' + error.message);
+            console.error('拍照失败:', error);
+        }
     }
 
     /**
