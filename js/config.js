@@ -14,6 +14,11 @@ const APP_CONFIG = {
         return localStorage.getItem('bailian_api_key') || 'sk-sp-e2181324b29a4e909d569e3cc03283ec';
     },
     
+    // Perplexity API Key（用于联网搜索）
+    get perplexityKey() {
+        return localStorage.getItem('perplexity_api_key') || '';
+    },
+    
     // 孩子名字
     get childName() {
         return localStorage.getItem('child_name') || '小朋友';

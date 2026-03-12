@@ -70,6 +70,71 @@ class AIAssistant {
     }
 
     /**
+     * 检测问题是否需要联网搜索
+     */
+    needsOnlineSearch(question) {
+        const onlineKeywords = [
+            '现在', '今天', '最新', '新闻', '天气',
+            '什么时候', '几月几日', '哪一年',
+            '搜索', '查一下', '帮我找',
+            '实时', '当前', '最近发生'
+        ];
+        
+        return onlineKeywords.some(keyword => question.includes(keyword));
+    }
+
+    /**
+     * 使用 Perplexity 进行联网搜索
+     */
+    async searchWithPerplexity(question) {
+        const perplexityKey = localStorage.getItem('perplexity_api_key') || window.APP_CONFIG?.perplexityKey;
+        
+        if (!perplexityKey) {
+            console.warn('⚠️ Perplexity API Key 未设置，使用普通模式');
+            return null;
+        }
+
+        try {
+            console.log('🌐 使用 Perplexity 联网搜索...');
+            
+            const response = await fetch('https://api.perplexity.ai/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${perplexityKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'llama-3.1-sonar-small-128k-online',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: '你是一个小学生的AI助教，用简单易懂的语言回答问题，控制在100字以内。'
+                        },
+                        {
+                            role: 'user',
+                            content: question
+                        }
+                    ]
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Perplexity API 错误: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const answer = data.choices[0].message.content;
+            
+            console.log('✅ Perplexity 搜索成功');
+            return answer;
+            
+        } catch (error) {
+            console.error('❌ Perplexity 搜索失败:', error);
+            return null;
+        }
+    }
+
+    /**
      * 问答接口
      * @param {string} question - 用户问题
      * @param {string} imageBase64 - 可选的图片（base64）
@@ -78,6 +143,36 @@ class AIAssistant {
     async askQuestion(question, imageBase64 = null) {
         if (!this.hasApiKey()) {
             throw new Error('请先设置 API Key');
+        }
+        
+        // 如果是纯文本问题且需要联网，尝试使用 Perplexity
+        if (!imageBase64 && this.needsOnlineSearch(question)) {
+            window.showToast('🌐 检测到需要联网信息...');
+            
+            const onlineAnswer = await this.searchWithPerplexity(question);
+            if (onlineAnswer) {
+                window.showToast('✅ 已从网络获取最新信息');
+                
+                // 将联网搜索的结果也加入历史
+                this.conversationHistory.push({
+                    role: 'user',
+                    content: question
+                });
+                this.conversationHistory.push({
+                    role: 'assistant',
+                    content: onlineAnswer
+                });
+                
+                // 限制历史长度
+                if (this.conversationHistory.length > this.maxHistoryLength * 2) {
+                    this.conversationHistory = this.conversationHistory.slice(-this.maxHistoryLength * 2);
+                }
+                
+                return onlineAnswer;
+            }
+            
+            // 如果 Perplexity 失败，提示并继续使用普通模式
+            window.showToast('⚠️ 联网功能不可用，使用本地知识回答');
         }
 
         let content;
