@@ -102,7 +102,7 @@ class HomeworkGuardianApp {
      */
     async enterMainScreen() {
         // 隐藏设置页面
-        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('main-screen').classList.remove('hidden');
 
         // 初始化各模块
@@ -338,6 +338,6 @@ if ('serviceWorker' in navigator) {
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('[data-tab="settings"]')?.addEventListener('click', () => {
         document.getElementById('main-screen').classList.add('hidden');
-        document.getElementById('setup-screen').classList.remove('hidden');
+        document.getElementById('auth-screen').classList.remove('hidden');
     });
 });
