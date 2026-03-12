@@ -52,21 +52,32 @@ class UIController {
         // 拍照提问按钮
         const photoBtn = document.getElementById('photo-ask-btn');
         if (photoBtn) {
-            photoBtn.addEventListener('click', async () => {
-                await this.showCameraPreview();
+            photoBtn.addEventListener('click', () => {
+                this.showPhotoOptions();
             });
         }
         
-        // 问问页面的摄像头控制
-        const questionToggleBtn = document.getElementById('question-toggle-camera');
-        const questionCloseBtn = document.getElementById('question-close-camera');
+        // 全屏摄像头控制
+        const closeFullscreenBtn = document.getElementById('close-fullscreen-camera');
+        const toggleFullscreenBtn = document.getElementById('toggle-fullscreen-camera');
+        const captureBtn = document.getElementById('capture-fullscreen-photo');
         
-        if (questionToggleBtn) {
-            questionToggleBtn.addEventListener('click', () => this.toggleQuestionCamera());
+        if (closeFullscreenBtn) {
+            closeFullscreenBtn.addEventListener('click', () => this.closeFullscreenCamera());
         }
         
-        if (questionCloseBtn) {
-            questionCloseBtn.addEventListener('click', () => this.closeCameraPreview());
+        if (toggleFullscreenBtn) {
+            toggleFullscreenBtn.addEventListener('click', () => this.toggleFullscreenCamera());
+        }
+        
+        if (captureBtn) {
+            captureBtn.addEventListener('click', () => this.captureFullscreenPhoto());
+        }
+        
+        // 图片上传
+        const uploadInput = document.getElementById('upload-image-input');
+        if (uploadInput) {
+            uploadInput.addEventListener('change', (e) => this.handleImageUpload(e));
         }
 
         // 文字提问
@@ -173,7 +184,7 @@ class UIController {
     /**
      * 添加聊天消息
      */
-    addChatMessage(text, isUser = false) {
+    addChatMessage(text, isUser = false, imageBase64 = null) {
         const messagesContainer = document.getElementById('chat-messages');
         
         // 移除欢迎消息
@@ -185,9 +196,21 @@ class UIController {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
         
+        // 如果有图片，添加图片预览
+        let content = text;
+        if (imageBase64) {
+            content = `
+                <img src="${imageBase64}" 
+                     style="max-width:200px;max-height:200px;border-radius:8px;cursor:pointer;display:block;margin-bottom:8px;" 
+                     onclick="window.uiController.showImageFullscreen('${imageBase64}')"
+                     alt="图片">
+                <div>${text}</div>
+            `;
+        }
+        
         messageDiv.innerHTML = `
             <div class="message-avatar">${isUser ? '👦' : '🤖'}</div>
-            <div class="message-bubble">${text}</div>
+            <div class="message-bubble">${content}</div>
         `;
 
         messagesContainer.appendChild(messageDiv);
@@ -222,6 +245,236 @@ class UIController {
         voiceText.textContent = '按住说话';
 
         window.voiceManager.stopListening();
+    }
+
+    /**
+     * 显示拍照选项（拍照 or 上传）
+     */
+    showPhotoOptions() {
+        // 创建一个简单的选择对话框
+        const choice = confirm('选择图片来源：\n\n确定 = 📷 拍照\n取消 = 📁 从相册选择');
+        
+        if (choice) {
+            // 拍照
+            this.openFullscreenCamera();
+        } else {
+            // 上传图片
+            document.getElementById('upload-image-input').click();
+        }
+    }
+
+    /**
+     * 打开全屏摄像头
+     */
+    async openFullscreenCamera() {
+        try {
+            const container = document.getElementById('fullscreen-camera');
+            const video = document.getElementById('fullscreen-camera-video');
+            
+            if (!container || !video) {
+                throw new Error('找不到摄像头界面');
+            }
+            
+            // 显示界面
+            container.style.display = 'block';
+            
+            // 启动摄像头
+            window.showToast('正在启动摄像头...');
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: this.fullscreenCameraFacing || 'environment' } // 默认后置
+            });
+            
+            video.srcObject = stream;
+            this.fullscreenCameraStream = stream;
+            this.fullscreenCameraFacing = 'environment';
+            
+            await video.play();
+            console.log('全屏摄像头已启动');
+            
+        } catch (error) {
+            console.error('启动摄像头失败:', error);
+            window.showToast('摄像头启动失败: ' + error.message);
+            this.closeFullscreenCamera();
+        }
+    }
+
+    /**
+     * 切换全屏摄像头（前后）
+     */
+    async toggleFullscreenCamera() {
+        try {
+            const video = document.getElementById('fullscreen-camera-video');
+            if (!video) return;
+            
+            // 停止当前流
+            if (this.fullscreenCameraStream) {
+                this.fullscreenCameraStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // 切换方向
+            this.fullscreenCameraFacing = this.fullscreenCameraFacing === 'user' ? 'environment' : 'user';
+            
+            // 启动新摄像头
+            window.showToast('切换中...');
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: this.fullscreenCameraFacing }
+            });
+            
+            video.srcObject = stream;
+            this.fullscreenCameraStream = stream;
+            await video.play();
+            
+            window.showToast(`已切换到${this.fullscreenCameraFacing === 'user' ? '前置' : '后置'}摄像头`);
+        } catch (error) {
+            console.error('切换摄像头失败:', error);
+            window.showToast('切换失败');
+            this.fullscreenCameraFacing = this.fullscreenCameraFacing === 'user' ? 'environment' : 'user';
+        }
+    }
+
+    /**
+     * 拍照（全屏模式）
+     */
+    async captureFullscreenPhoto() {
+        try {
+            const video = document.getElementById('fullscreen-camera-video');
+            const canvas = document.getElementById('camera-canvas');
+            
+            if (!video || !video.videoWidth) {
+                throw new Error('摄像头未就绪');
+            }
+            
+            // 设置 canvas 尺寸
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // 绘制当前帧
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // 转换为 base64
+            const imageBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            
+            console.log('拍照成功，图片大小:', (imageBase64.length / 1024).toFixed(2), 'KB');
+            
+            // 关闭摄像头
+            this.closeFullscreenCamera();
+            
+            // 发送给 AI
+            await this.sendImageToAI(imageBase64);
+            
+        } catch (error) {
+            console.error('拍照失败:', error);
+            window.showToast('拍照失败: ' + error.message);
+        }
+    }
+
+    /**
+     * 关闭全屏摄像头
+     */
+    closeFullscreenCamera() {
+        const container = document.getElementById('fullscreen-camera');
+        const video = document.getElementById('fullscreen-camera-video');
+        
+        if (this.fullscreenCameraStream) {
+            this.fullscreenCameraStream.getTracks().forEach(track => track.stop());
+            this.fullscreenCameraStream = null;
+        }
+        
+        if (video) {
+            video.srcObject = null;
+        }
+        
+        if (container) {
+            container.style.display = 'none';
+        }
+    }
+
+    /**
+     * 处理图片上传
+     */
+    async handleImageUpload(event) {
+        try {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // 检查文件类型
+            if (!file.type.startsWith('image/')) {
+                window.showToast('请选择图片文件');
+                return;
+            }
+            
+            // 检查文件大小（限制5MB）
+            if (file.size > 5 * 1024 * 1024) {
+                window.showToast('图片太大，请选择小于5MB的图片');
+                return;
+            }
+            
+            window.showLoading('正在读取图片...');
+            
+            // 读取文件为 base64
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const imageBase64 = e.target.result;
+                console.log('图片已读取，大小:', (imageBase64.length / 1024).toFixed(2), 'KB');
+                
+                window.hideLoading();
+                
+                // 发送给 AI
+                await this.sendImageToAI(imageBase64);
+            };
+            
+            reader.onerror = () => {
+                window.hideLoading();
+                window.showToast('读取图片失败');
+            };
+            
+            reader.readAsDataURL(file);
+            
+            // 清空 input，允许再次选择同一文件
+            event.target.value = '';
+            
+        } catch (error) {
+            console.error('处理图片失败:', error);
+            window.showToast('处理图片失败: ' + error.message);
+        }
+    }
+
+    /**
+     * 发送图片给 AI 分析
+     */
+    async sendImageToAI(imageBase64) {
+        try {
+            // 显示用户消息（带图片预览）
+            this.addChatMessage('📷 [图片]', true, imageBase64);
+            
+            // 显示加载
+            window.showLoading('AI 正在分析图片...');
+            
+            console.log('准备调用 AI');
+            const answer = await window.aiAssistant.askQuestionWithImage('请帮我看看这道题', imageBase64);
+            console.log('AI 返回结果:', answer);
+            
+            // 隐藏加载
+            window.hideLoading();
+            
+            // 显示 AI 回复
+            if (answer) {
+                this.addChatMessage(answer);
+                
+                // 播放语音（如果可用）
+                if (window.voiceManager) {
+                    window.voiceManager.speak(answer);
+                }
+            }
+            
+            console.log('✅ 图片提问完成');
+            
+        } catch (error) {
+            window.hideLoading();
+            console.error('❌ AI 分析失败:', error);
+            window.showToast('AI 分析失败: ' + error.message);
+        }
     }
 
     /**
@@ -662,6 +915,45 @@ window.showHanziWriter = function(character) {
     // 点击重播
     grid.onclick = () => writer.animateCharacter();
     document.getElementById('hanzi-hint').textContent = character + ' - 点击重播';
+};
+
+/**
+ * 全屏查看图片
+ */
+window.UIController.prototype.showImageFullscreen = function(imageBase64) {
+    // 创建全屏覆盖层
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.9);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: zoom-out;
+    `;
+    
+    // 创建图片
+    const img = document.createElement('img');
+    img.src = imageBase64;
+    img.style.cssText = `
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+    `;
+    
+    overlay.appendChild(img);
+    
+    // 点击关闭
+    overlay.onclick = () => {
+        overlay.remove();
+    };
+    
+    document.body.appendChild(overlay);
 };
 
 // 导出全局实例
