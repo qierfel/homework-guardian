@@ -114,6 +114,7 @@ class HomeworkGuardianApp {
      */
     async initModules() {
         window.showLoading('初始化中...');
+        await new Promise(r => setTimeout(r, 500));
 
         try {
             // 1. 初始化 UI 控制器
