@@ -219,54 +219,75 @@ class UIController {
         try {
             console.log('📷 开始拍照提问');
             
+            // 显示加载提示
+            window.showLoading('准备拍照...');
+            
             // 获取 video 和 canvas 元素
             const video = document.getElementById('camera-video');
             const canvas = document.getElementById('camera-canvas');
             
             console.log('video元素:', video);
             console.log('canvas元素:', canvas);
+            console.log('video.readyState:', video?.readyState);
+            console.log('video.videoWidth:', video?.videoWidth);
+            console.log('video.videoHeight:', video?.videoHeight);
+            console.log('video.srcObject:', video?.srcObject);
             
             if (!video) {
-                throw new Error('找不到摄像头元素');
+                throw new Error('找不到摄像头元素，请先进入守护页面');
             }
             
             if (!canvas) {
                 throw new Error('找不到画布元素');
             }
             
-            // 检查摄像头是否已启动
-            console.log('video.videoWidth:', video.videoWidth);
-            console.log('video.videoHeight:', video.videoHeight);
-            
-            if (!video.videoWidth || !video.videoHeight) {
-                window.showToast('摄像头未启动，正在启动...');
-                console.log('尝试启动摄像头...');
+            // 检查视频是否就绪
+            if (video.readyState < 2) {
+                console.log('视频未就绪，等待...');
+                window.showToast('等待摄像头就绪...');
                 
-                // 尝试启动摄像头
-                try {
+                // 等待视频加载
+                await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('摄像头加载超时'));
+                    }, 5000);
+                    
+                    video.addEventListener('loadeddata', () => {
+                        clearTimeout(timeout);
+                        resolve();
+                    }, { once: true });
+                    
+                    // 如果已经有 srcObject，尝试播放
+                    if (video.srcObject) {
+                        video.play().catch(e => console.log('播放失败:', e));
+                    }
+                });
+            }
+            
+            // 再次检查尺寸
+            if (!video.videoWidth || !video.videoHeight) {
+                // 如果没有 srcObject，需要启动摄像头
+                if (!video.srcObject) {
+                    console.log('没有视频流，尝试启动摄像头...');
+                    window.showToast('正在启动摄像头...');
+                    
                     const stream = await navigator.mediaDevices.getUserMedia({
                         video: { facingMode: 'user' }
                     });
                     video.srcObject = stream;
                     await video.play();
-                    console.log('摄像头已启动，等待就绪...');
                     
-                    // 等待一会儿让摄像头就绪
+                    // 等待视频就绪
                     await new Promise(resolve => setTimeout(resolve, 1000));
-                    
-                    console.log('就绪后 - video.videoWidth:', video.videoWidth);
-                    console.log('就绪后 - video.videoHeight:', video.videoHeight);
-                    
-                    if (!video.videoWidth || !video.videoHeight) {
-                        throw new Error('摄像头启动失败：无法获取视频尺寸');
-                    }
-                } catch (err) {
-                    console.error('启动摄像头失败:', err);
-                    throw new Error('无法启动摄像头: ' + err.name + ' - ' + err.message);
+                }
+                
+                // 最后一次检查
+                if (!video.videoWidth || !video.videoHeight) {
+                    throw new Error('无法获取摄像头画面，请先在守护页面启动摄像头');
                 }
             }
             
-            window.showLoading('拍照中...');
+            console.log('摄像头已就绪:', video.videoWidth, 'x', video.videoHeight);
             
             // 设置 canvas 尺寸
             canvas.width = video.videoWidth;
