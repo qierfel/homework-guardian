@@ -17,15 +17,20 @@ class VoiceManager {
             this.recognition.lang = 'zh-CN';
             this.recognition.continuous = false;
             this.recognition.interimResults = false;
+            this.recognition.maxAlternatives = 1;
             
             console.log('✅ 语音管理器已初始化 (Web Speech API)');
             console.log('浏览器:', navigator.userAgent);
+            console.log('语音识别对象:', this.recognition);
         } else {
             console.warn('❌ 浏览器不支持语音识别');
             console.log('User Agent:', navigator.userAgent);
+            console.log('webkitSpeechRecognition 存在?', 'webkitSpeechRecognition' in window);
+            console.log('SpeechRecognition 存在?', 'SpeechRecognition' in window);
+            
             // 显示提示
             setTimeout(() => {
-                window.showToast('当前浏览器不支持语音识别，请使用 Chrome 或 Edge');
+                window.showToast('当前浏览器不支持语音识别，建议：\n1. 使用Chrome浏览器\n2. 或使用文字输入\n3. 或使用拍照功能');
             }, 2000);
         }
     }
@@ -61,15 +66,24 @@ class VoiceManager {
             };
 
             this.recognition.onerror = (event) => {
-                console.error('识别错误:', event.error);
+                console.error('❌ 识别错误:', event);
+                console.error('错误类型:', event.error);
+                console.error('错误消息:', event.message);
+                
                 let message = '识别失败';
                 
                 if (event.error === 'no-speech') {
-                    message = '没有听到声音';
+                    message = '没有听到声音，请靠近麦克风说话';
                 } else if (event.error === 'audio-capture') {
-                    message = '无法访问麦克风';
+                    message = '无法访问麦克风，请检查设备';
                 } else if (event.error === 'not-allowed') {
-                    message = '请允许访问麦克风';
+                    message = '请允许访问麦克风权限';
+                } else if (event.error === 'network') {
+                    message = '网络错误，请检查网络连接';
+                } else if (event.error === 'service-not-allowed') {
+                    message = '语音服务不可用（可能需要翻墙）';
+                } else {
+                    message = '识别失败: ' + event.error;
                 }
                 
                 window.showToast(message);
