@@ -11,7 +11,7 @@ const APP_CONFIG = {
     
     // 阿里云百炼 API Key（用于语音识别）
     get bailianKey() {
-        return localStorage.getItem('bailian_api_key') || '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';
+        return localStorage.getItem('bailian_api_key') || 'sk-sp-e2181324b29a4e909d569e3cc03283ec';
     },
     
     // 孩子名字

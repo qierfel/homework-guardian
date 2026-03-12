@@ -322,7 +322,7 @@ class AuthManager {
                     localStorage.setItem('bailian_api_key', data.bailian_key);
                 } else {
                     // 数据库没有 Key，使用默认
-                    localStorage.setItem('bailian_api_key', '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');
+                    localStorage.setItem('bailian_api_key', 'sk-sp-e2181324b29a4e909d569e3cc03283ec');
                 }
                 
                 console.log('已加载用户 API 配置');
@@ -339,7 +339,7 @@ class AuthManager {
      */
     setDefaultKeys() {
         localStorage.setItem('openrouter_api_key', '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');
-        localStorage.setItem('bailian_api_key', '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');
+        localStorage.setItem('bailian_api_key', 'sk-sp-e2181324b29a4e909d569e3cc03283ec');
         console.log('已设置默认 API Keys');
     }
 
