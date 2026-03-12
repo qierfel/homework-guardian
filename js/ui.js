@@ -449,12 +449,74 @@ class UIController {
             // 关闭摄像头
             this.closeFullscreenCamera();
             
-            // 发送给 AI
-            await this.sendImageToAI(imageBase64);
+            // 询问用户：提问还是作业分析
+            this.showPhotoActionChoice(imageBase64);
             
         } catch (error) {
             console.error('拍照失败:', error);
             window.showToast('拍照失败: ' + error.message);
+        }
+    }
+
+    /**
+     * 显示拍照后的操作选择
+     */
+    showPhotoActionChoice(imageBase64) {
+        const choice = confirm('请选择操作:\n\n确定 = 📝 分析作业书写\n取消 = ❓ 提问题目');
+        
+        if (choice) {
+            // 分析作业书写
+            this.analyzeHomework(imageBase64);
+        } else {
+            // 普通提问
+            this.sendImageToAI(imageBase64);
+        }
+    }
+    
+    /**
+     * 分析作业书写质量
+     */
+    async analyzeHomework(imageBase64) {
+        try {
+            // 显示用户消息
+            this.addChatMessage('📝 [作业照片]', true, imageBase64);
+            
+            // 显示加载
+            window.showLoading('正在分析书写质量...');
+            
+            // 使用特殊的 prompt 让 AI 分析书写
+            const analysisPrompt = `请仔细分析这张作业照片，重点评价：
+1. 字写得怎么样？（笔画、结构、大小）
+2. 有没有写错的字？
+3. 哪些字写得好，哪些需要改进？
+4. 给出具体的改进建议
+
+要求：语气鼓励为主，指出不足时要温和，给出具体可操作的建议。`;
+            
+            const answer = await window.aiAssistant.askQuestionWithImage(analysisPrompt, imageBase64);
+            
+            // 隐藏加载
+            window.hideLoading();
+            
+            // 显示 AI 回复
+            if (answer) {
+                this.addChatMessage(answer);
+                
+                // 播放语音
+                if (window.voiceManager) {
+                    window.voiceManager.speak(answer);
+                }
+                
+                // 更新对话计数
+                this.updateConversationCount();
+            }
+            
+            window.showToast('✅ 作业分析完成');
+            
+        } catch (error) {
+            window.hideLoading();
+            console.error('作业分析失败:', error);
+            window.showToast('分析失败: ' + error.message);
         }
     }
 
