@@ -127,13 +127,30 @@ class AIAssistant {
             
             console.log('当前历史记录:', this.conversationHistory.length / 2, '轮对话');
             
-            // 检测是否涉及汉字书写
-            if (question.includes('怎么写') || question.includes('笔顺') || question.includes('田字格') || 
-                response.includes('笔顺') || response.includes('田字格')) {
-                // 提取汉字
-                const char = this.extractHanzi(question);
-                if (char && typeof HanziWriter !== 'undefined' && typeof window.showHanziWriter === 'function') {
-                    setTimeout(() => window.showHanziWriter(char), 500);
+            // 检测是否涉及汉字书写（更广泛的关键词）
+            const writingKeywords = ['怎么写', '如何写', '笔顺', '笔画', '田字格', '写法', '写字', '怎样写'];
+            const shouldShowHanzi = writingKeywords.some(keyword => 
+                question.includes(keyword) || response.includes(keyword)
+            );
+            
+            if (shouldShowHanzi) {
+                // 提取汉字（优先从问题中提取，其次从回答中提取）
+                let char = this.extractHanzi(question);
+                if (!char) {
+                    char = this.extractHanzi(response);
+                }
+                
+                console.log('检测到书写相关问题，提取汉字:', char);
+                
+                if (char) {
+                    if (typeof HanziWriter !== 'undefined' && typeof window.showHanziWriter === 'function') {
+                        console.log('显示汉字笔顺:', char);
+                        setTimeout(() => window.showHanziWriter(char), 800);
+                    } else {
+                        console.warn('HanziWriter 未加载');
+                    }
+                } else {
+                    console.log('未找到汉字');
                 }
             }
             
@@ -148,6 +165,19 @@ class AIAssistant {
      * 提取问题中的第一个汉字
      */
     extractHanzi(text) {
+        // 优先级1: 提取引号中的单个汉字 "飞"、'飞'、「飞」
+        const quotedMatch = text.match(/["""''「]([[\u4e00-\u9fa5])["""''」]/);
+        if (quotedMatch) {
+            return quotedMatch[1];
+        }
+        
+        // 优先级2: 提取"字"前面的汉字，如"飞字"
+        const beforeZiMatch = text.match(/([\u4e00-\u9fa5])字/);
+        if (beforeZiMatch) {
+            return beforeZiMatch[1];
+        }
+        
+        // 优先级3: 提取第一个汉字
         const hanziMatch = text.match(/[\u4e00-\u9fa5]/);
         return hanziMatch ? hanziMatch[0] : null;
     }

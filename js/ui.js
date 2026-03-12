@@ -957,28 +957,63 @@ window.hideLoading = function() {
 
 // 汉字笔顺显示函数
 window.showHanziWriter = function(character) {
+    console.log('📝 showHanziWriter 被调用，汉字:', character);
+    
     const container = document.getElementById('hanzi-container');
     const grid = document.getElementById('hanzi-grid');
-    grid.innerHTML = '';
-    container.style.display = 'block';
     
-    const writer = HanziWriter.create(grid, character, {
-        width: 200,
-        height: 200,
-        padding: 5,
-        showOutline: true,
-        strokeAnimationSpeed: 1,
-        delayBetweenStrokes: 300,
-        strokeColor: '#ffffff',
-        outlineColor: '#444444',
-        drawingColor: '#ff6b6b'
-    });
+    if (!container || !grid) {
+        console.error('❌ 找不到汉字容器元素');
+        return;
+    }
     
-    writer.animateCharacter();
+    if (typeof HanziWriter === 'undefined') {
+        console.error('❌ HanziWriter 未加载');
+        window.showToast('汉字笔顺功能未加载');
+        return;
+    }
     
-    // 点击重播
-    grid.onclick = () => writer.animateCharacter();
-    document.getElementById('hanzi-hint').textContent = character + ' - 点击重播';
+    try {
+        // 清空并显示容器
+        grid.innerHTML = '';
+        container.style.display = 'block';
+        
+        // 滚动到汉字容器
+        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        console.log('创建 HanziWriter...');
+        const writer = HanziWriter.create(grid, character, {
+            width: 200,
+            height: 200,
+            padding: 5,
+            showOutline: true,
+            strokeAnimationSpeed: 1,
+            delayBetweenStrokes: 300,
+            strokeColor: '#ffffff',
+            outlineColor: '#444444',
+            drawingColor: '#ff6b6b'
+        });
+        
+        console.log('✅ HanziWriter 创建成功，开始动画');
+        writer.animateCharacter();
+        
+        // 点击重播
+        grid.onclick = () => {
+            console.log('🔄 重播笔顺');
+            writer.animateCharacter();
+        };
+        
+        const hintElement = document.getElementById('hanzi-hint');
+        if (hintElement) {
+            hintElement.textContent = `"${character}" 字的笔顺 - 点击重播`;
+        }
+        
+        window.showToast(`✅ 正在播放"${character}"的笔顺`);
+        
+    } catch (error) {
+        console.error('❌ 显示汉字笔顺失败:', error);
+        window.showToast('显示笔顺失败: ' + error.message);
+    }
 }
 
 /**
