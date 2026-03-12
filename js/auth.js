@@ -4,7 +4,7 @@
 
 // Supabase 配置
 const SUPABASE_URL = 'https://nwazdbafsgwuispakdnv.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53YXpkYmFmc2d3dWlzcGFrZG52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyNjA3NzMsImV4cCI6MjA1NzgzNjc3M30.sb_publishable_Cop47z2vSKYkUDq1WzTtew_PFqFykIM';
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53YXpkYmFmc2d3dWlzcGFrZG52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNzM4NjYsImV4cCI6MjA4ODg0OTg2Nn0.lH7M2WvQ5g0tt7V0wPrXWkKDl2NICb0fwpklIAHFWcc";
 
 // 初始化 Supabase 客户端
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
