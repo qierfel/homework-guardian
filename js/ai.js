@@ -76,18 +76,18 @@ class AIAssistant {
      * 检测问题是否需要联网搜索
      */
     needsOnlineSearch(question) {
-        // 临时禁用联网检测，等调试完再启用
-        return false;
-        
-        /* 原检测逻辑
+        // 更精确的联网关键词（避免误触发）
         const onlineKeywords = [
-            '现在天气', '今天天气', '最新新闻',
-            '查一下', '帮我搜索',
-            '实时', '当前时间'
+            '今天天气', '明天天气', '天气预报',
+            '最新新闻', '新闻',
+            '现在几点', '当前时间',
+            '搜索一下', '查一下', '帮我搜',
+            '最近发生', '刚刚发生',
+            '实时数据', '当前情况'
         ];
         
+        // 必须完全匹配关键词（避免误触发）
         return onlineKeywords.some(keyword => question.includes(keyword));
-        */
     }
 
     /**
