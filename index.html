@@ -123,37 +123,6 @@
 
         <!-- Tab 2: 问问 -->
         <div id="tab-question" class="tab-content">
-            <button onclick="
-var key = localStorage.getItem('groq_api_key');
-if(!key){ alert('Groq Key 为空！'); return; }
-alert('Key前缀: ' + key.substring(0,8));
-" style="position:fixed;top:100px;right:10px;z-index:9999;background:red;color:white;padding:10px;border:none;border-radius:8px;">
-🔑 检查Key
-</button>
-            
-            <button onclick="
-(async function(){
- var key = localStorage.getItem('groq_api_key');
- var blob = new Blob(['test'], {type:'audio/webm'});
- var fd = new FormData();
- fd.append('file', blob, 'test.webm');
- fd.append('model', 'whisper-large-v3-turbo');
- try {
- var r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
- method:'POST',
- headers:{'Authorization':'Bearer '+key},
- body:fd
- });
- var t = await r.text();
- alert('状态:' + r.status + ' 返回:' + t.substring(0,100));
- } catch(e) {
- alert('异常:' + e.message);
- }
-})();
-" style="position:fixed;top:150px;right:10px;z-index:9999;background:blue;color:white;padding:10px;border:none;border-radius:8px;">
-🌐 测试Groq
-</button>
-            
             <!-- 全屏摄像头拍照界面 -->
             <div id="fullscreen-camera" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;">
                 <video id="fullscreen-camera-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
