@@ -7,7 +7,7 @@ class HomeworkMonitor {
         this.isMonitoring = false;
         this.intervalId = null;
         this.lastAnalysisTime = 0;
-        this.ANALYSIS_INTERVAL = 10; // 每10秒分析一次
+        this.ANALYSIS_INTERVAL = 30; // 每30秒分析一次
     }
 
     /**
@@ -22,10 +22,10 @@ class HomeworkMonitor {
         this.isMonitoring = true;
         this.videoElement = videoElement;
         
-        window.showToast('✍️ 作业监控已启动');
-        console.log('✅ 开始实时监控书写质量');
+        window.showToast('✍️ 作业监控已启动（每30秒分析一次）');
+        console.log('✅ 开始实时监控书写质量（间隔30秒）');
 
-        // 每10秒分析一次
+        // 每30秒分析一次
         this.intervalId = setInterval(async () => {
             if (!this.isMonitoring) return;
             
