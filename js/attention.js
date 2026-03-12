@@ -105,8 +105,10 @@ class AttentionDetector {
                 
                 const landmarks = results.poseLandmarks;
                 
-                // 关键点：0=鼻子, 11=左肩, 12=右肩
+                // 关键点：0=鼻子, 7=左耳, 8=右耳, 11=左肩, 12=右肩
                 const nose = landmarks[0];
+                const leftEar = landmarks[7];
+                const rightEar = landmarks[8];
                 const leftShoulder = landmarks[11];
                 const rightShoulder = landmarks[12];
                 
@@ -117,16 +119,33 @@ class AttentionDetector {
                     return;
                 }
                 
-                // 计算头部高度（鼻子 y 坐标）
+                // 1. 检测低头（垂直方向）
                 const noseY = nose.y;
                 const shoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+                const isHeadDown = noseY > shoulderY - 0.05;
                 
-                // 判断：鼻子低于肩膀 = 低头 = 专注
-                const isHeadDown = noseY > shoulderY - 0.05; // 允许5%误差
+                // 2. 检测转头（水平方向）
+                const noseX = nose.x;
+                const shoulderCenterX = (leftShoulder.x + rightShoulder.x) / 2;
+                const headOffset = Math.abs(noseX - shoulderCenterX);
+                const isFacingForward = headOffset < 0.15; // 头部偏移不超过15%
                 
-                if (isHeadDown) {
+                // 3. 检测耳朵可见性（判断是否转头）
+                let earVisibility = 'both';
+                if (leftEar && rightEar) {
+                    const leftVisible = leftEar.visibility > 0.5;
+                    const rightVisible = rightEar.visibility > 0.5;
+                    if (!leftVisible && rightVisible) earVisibility = 'right-only';
+                    if (leftVisible && !rightVisible) earVisibility = 'left-only';
+                }
+                
+                const isTurningHead = earVisibility !== 'both';
+                
+                // 综合判断：低头 + 不转头 = 专注
+                const isFocused = isHeadDown && isFacingForward && !isTurningHead;
+                
+                if (isFocused) {
                     this.stablePoseCount++;
-                    // 需要连续2次检测都是低头，才算专注（避免误判）
                     if (this.stablePoseCount >= 2) {
                         this.currentStatus = 'focused';
                     }
@@ -136,9 +155,10 @@ class AttentionDetector {
                 }
                 
                 console.log('姿态检测:', {
-                    noseY: noseY.toFixed(3),
-                    shoulderY: shoulderY.toFixed(3),
                     isHeadDown,
+                    isFacingForward,
+                    isTurningHead,
+                    earVisibility,
                     status: this.currentStatus
                 });
                 
@@ -148,6 +168,22 @@ class AttentionDetector {
             // 发送视频帧
             this.pose.send({image: videoElement});
         });
+    }
+    
+    /**
+     * 暂停提醒（不停止检测，只是不发警告）
+     */
+    pauseAlert() {
+        this.lastAlertTime = Date.now() / 1000 + 3600; // 1小时内不提醒
+        console.log('✅ 已暂停提醒');
+    }
+    
+    /**
+     * 恢复提醒
+     */
+    resumeAlert() {
+        this.lastAlertTime = 0;
+        console.log('✅ 已恢复提醒');
     }
 
     triggerAlert() {

@@ -122,6 +122,24 @@ class UIController {
         if (clearHistoryBtn) {
             clearHistoryBtn.addEventListener('click', () => this.clearConversationHistory());
         }
+        
+        // 作业监控按钮
+        const startHomeworkBtn = document.getElementById('start-homework-monitor');
+        const stopHomeworkBtn = document.getElementById('stop-homework-monitor');
+        
+        if (startHomeworkBtn) {
+            startHomeworkBtn.addEventListener('click', () => this.startHomeworkMonitor());
+        }
+        
+        if (stopHomeworkBtn) {
+            stopHomeworkBtn.addEventListener('click', () => this.stopHomeworkMonitor());
+        }
+        
+        // 暂停提醒按钮
+        const pauseAttentionBtn = document.getElementById('pause-attention');
+        if (pauseAttentionBtn) {
+            pauseAttentionBtn.addEventListener('click', () => this.toggleAttentionAlert());
+        }
 
         // 文字提问
         const sendBtn = document.getElementById('send-text-btn');
@@ -1261,6 +1279,66 @@ UIController.prototype.showImageFullscreen = function(imageBase64) {
     };
     
     document.body.appendChild(overlay);
+};
+
+/**
+ * 开始作业监控
+ */
+UIController.prototype.startHomeworkMonitor = function() {
+    const video = document.getElementById('camera-video');
+    if (!video || !video.videoWidth) {
+        window.showToast('请先开启摄像头');
+        return;
+    }
+    
+    if (window.homeworkMonitor) {
+        window.homeworkMonitor.startMonitoring(video);
+        
+        // 切换按钮显示
+        const startBtn = document.getElementById('start-homework-monitor');
+        const stopBtn = document.getElementById('stop-homework-monitor');
+        if (startBtn) startBtn.style.display = 'none';
+        if (stopBtn) stopBtn.style.display = 'block';
+    }
+};
+
+/**
+ * 停止作业监控
+ */
+UIController.prototype.stopHomeworkMonitor = function() {
+    if (window.homeworkMonitor) {
+        window.homeworkMonitor.stopMonitoring();
+        
+        // 切换按钮显示
+        const startBtn = document.getElementById('start-homework-monitor');
+        const stopBtn = document.getElementById('stop-homework-monitor');
+        if (startBtn) startBtn.style.display = 'block';
+        if (stopBtn) stopBtn.style.display = 'none';
+    }
+};
+
+/**
+ * 切换注意力提醒
+ */
+UIController.prototype.toggleAttentionAlert = function() {
+    const btn = document.getElementById('pause-attention');
+    if (!btn || !window.attentionDetector) return;
+    
+    const currentText = btn.querySelector('small').textContent;
+    
+    if (currentText === '暂停提醒') {
+        // 暂停
+        window.attentionDetector.pauseAlert();
+        btn.querySelector('span').textContent = '▶️';
+        btn.querySelector('small').textContent = '恢复提醒';
+        window.showToast('✅ 已暂停注意力提醒');
+    } else {
+        // 恢复
+        window.attentionDetector.resumeAlert();
+        btn.querySelector('span').textContent = '⏸️';
+        btn.querySelector('small').textContent = '暂停提醒';
+        window.showToast('✅ 已恢复注意力提醒');
+    }
 };
 
 // 导出全局实例
