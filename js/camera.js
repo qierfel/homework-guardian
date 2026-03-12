@@ -153,7 +153,7 @@ class CameraManager {
             message = '浏览器不支持摄像头访问（请使用 HTTPS）';
         }
         
-        window.showToast(message);
+        window.showToast(message + " " + error.name);
         console.error('摄像头错误详情:', error);
     }
 
