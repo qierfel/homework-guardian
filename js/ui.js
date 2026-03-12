@@ -817,7 +817,11 @@ class UIController {
             this.addChatMessage(answer);
             
             // 语音播报
-            window.voiceManager.speak(answer);
+            if (window.voiceManager && typeof window.voiceManager.speak === 'function') {
+                window.voiceManager.speak(answer);
+            } else {
+                console.warn('voiceManager 不可用，跳过语音播报');
+            }
             
             // 更新统计和对话计数
             this.questionCount++;

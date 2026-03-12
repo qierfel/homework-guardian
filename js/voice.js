@@ -10,6 +10,24 @@ class VoiceManager {
         this.isListening = false;
         this.callback = null;
         
+        // iOS/Safari 需要预加载语音列表
+        if (this.synthesis) {
+            // 触发语音列表加载
+            this.synthesis.getVoices();
+            
+            // iOS 需要在 voiceschanged 事件后才能获取语音
+            if (this.synthesis.onvoiceschanged !== undefined) {
+                this.synthesis.onvoiceschanged = () => {
+                    const voices = this.synthesis.getVoices();
+                    console.log('可用语音数量:', voices.length);
+                    const chineseVoices = voices.filter(v => 
+                        v.lang.includes('zh') || v.lang.includes('CN')
+                    );
+                    console.log('中文语音:', chineseVoices.map(v => v.name).join(', '));
+                };
+            }
+        }
+        
         // 初始化 Web Speech API
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -131,32 +149,65 @@ class VoiceManager {
      */
     speak(text) {
         if (!this.synthesis) {
-            console.warn('浏览器不支持语音播报');
+            console.warn('❌ 浏览器不支持语音播报');
+            window.showToast('您的浏览器不支持语音播报');
             return;
         }
 
+        if (!text || text.trim().length === 0) {
+            console.warn('播报内容为空');
+            return;
+        }
+
+        console.log('🔊 准备播报:', text.substring(0, 50) + (text.length > 50 ? '...' : ''));
+
         // 停止之前的播报
         this.synthesis.cancel();
+        
+        // iOS/Safari 需要等待一下
+        setTimeout(() => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.9;  // 稍慢一点，更清晰
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'zh-CN';
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
-        utterance.volume = 1.0;
+            utterance.onstart = () => {
+                console.log('✅ 开始播报');
+            };
 
-        utterance.onstart = () => {
-            console.log('开始播报:', text.substring(0, 20) + '...');
-        };
+            utterance.onend = () => {
+                console.log('✅ 播报结束');
+            };
 
-        utterance.onend = () => {
-            console.log('播报结束');
-        };
+            utterance.onerror = (event) => {
+                console.error('❌ 播报错误:', event);
+                console.error('错误类型:', event.error);
+                
+                // 如果是 iOS 首次播放失败，提示用户
+                if (event.error === 'not-allowed' || event.error === 'interrupted') {
+                    window.showToast('语音播报失败，可能需要点击屏幕激活');
+                }
+            };
 
-        utterance.onerror = (event) => {
-            console.error('播报错误:', event);
-        };
+            // 获取中文语音（如果有）
+            const voices = this.synthesis.getVoices();
+            const chineseVoice = voices.find(voice => 
+                voice.lang.includes('zh') || voice.lang.includes('CN')
+            );
+            
+            if (chineseVoice) {
+                utterance.voice = chineseVoice;
+                console.log('使用中文语音:', chineseVoice.name);
+            } else {
+                console.log('未找到中文语音，使用默认');
+            }
 
-        this.synthesis.speak(utterance);
+            this.synthesis.speak(utterance);
+            
+            // 显示播报提示
+            window.showToast('🔊 正在播报...');
+        }, 100);
     }
 
     /**
