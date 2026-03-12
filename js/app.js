@@ -123,10 +123,23 @@ class HomeworkGuardianApp {
             const videoElement = document.getElementById('camera-video');
             const canvasElement = document.getElementById('camera-canvas');
             
-            const cameraSuccess = await window.cameraManager.init(videoElement, canvasElement);
-            
-            if (!cameraSuccess) {
-                throw new Error('摄像头初始化失败');
+            try {
+                const cameraSuccess = await window.cameraManager.init(videoElement, canvasElement);
+                
+                if (!cameraSuccess) {
+                    throw new Error('摄像头初始化失败');
+                }
+            } catch(e) {
+                window.showToast('摄像头错误: ' + e.name + ' ' + e.message);
+                console.error('摄像头初始化失败:', e);
+                
+                // 更新状态显示错误原因
+                const statusText = document.querySelector('#attention-status .status-text');
+                if (statusText) {
+                    statusText.textContent = '摄像头错误: ' + (e.name || e.message);
+                }
+                
+                throw e; // 继续抛出错误
             }
 
             // 3. 绑定摄像头控制按钮
