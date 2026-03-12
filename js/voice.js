@@ -58,28 +58,38 @@ class VoiceManager {
      * @param {Function} callback - 识别结果回调函数 (text)
      */
     async startListening(callback) {
+        console.log('📍 startListening 被调用，回调类型:', typeof callback);
+        
         if (!this.recognition) {
+            console.error('❌ recognition 不存在');
             window.showToast('浏览器不支持语音识别');
             return false;
         }
 
         if (this.isListening) {
-            console.warn('正在识别中');
+            console.warn('⚠️ 正在识别中，忽略重复调用');
             return false;
         }
 
+        console.log('✅ 准备开始识别');
         this.callback = callback;
         this.isListening = true;
 
         try {
             // 设置识别事件
             this.recognition.onresult = (event) => {
+                console.log('✅ onresult 事件触发');
+                console.log('event.results:', event.results);
+                
                 const transcript = event.results[0][0].transcript;
-                console.log('识别结果:', transcript);
+                console.log('✅ 识别结果:', transcript);
                 window.showToast('识别到: ' + transcript);
                 
-                if (this.callback) {
+                if (this.callback && typeof this.callback === 'function') {
+                    console.log('✅ 调用回调函数');
                     this.callback(transcript);
+                } else {
+                    console.error('❌ 回调函数不可用，类型:', typeof this.callback);
                 }
             };
 
@@ -109,13 +119,19 @@ class VoiceManager {
             };
 
             this.recognition.onend = () => {
-                console.log('识别结束');
+                console.log('✅ onend 事件触发 - 识别结束');
                 this.isListening = false;
+            };
+            
+            this.recognition.onstart = () => {
+                console.log('✅ onstart 事件触发 - 识别已启动');
             };
 
             // 开始识别
+            console.log('📍 调用 recognition.start()...');
             this.recognition.start();
-            console.log('开始语音识别 (Web Speech API)');
+            console.log('✅ recognition.start() 调用成功');
+            console.log('✅ 开始语音识别 (Web Speech API)');
             window.showToast('🎤 正在听...');
             return true;
 
@@ -131,15 +147,21 @@ class VoiceManager {
      * 停止语音识别
      */
     stopListening() {
+        console.log('📍 stopListening 被调用');
+        console.log('isListening:', this.isListening);
+        console.log('recognition:', !!this.recognition);
+        
         if (!this.isListening || !this.recognition) {
+            console.log('⚠️ 未在识别状态或 recognition 不存在，跳过');
             return;
         }
 
         try {
+            console.log('📍 调用 recognition.stop()...');
             this.recognition.stop();
-            console.log('停止识别');
+            console.log('✅ 停止识别调用成功');
         } catch (error) {
-            console.error('停止识别失败:', error);
+            console.error('❌ 停止识别失败:', error);
         }
     }
 
