@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2>摄像头测试</h2>
+<button onclick="test()">测试摄像头</button>
+<video id="v" autoplay playsinline style="width:100%;max-width:400px;"></video>
+<p id="msg"></p>
+<script>
+function test(){
+  navigator.mediaDevices.getUserMedia({video:true})
+    .then(s=>{
+      document.getElementById('v').srcObject=s;
+      document.getElementById('msg').textContent='成功！';
+    })
+    .catch(e=>{
+      document.getElementById('msg').textContent='失败: '+e.name+' '+e.message;
+    });
+}
+</script>
+</body>
+</html>
