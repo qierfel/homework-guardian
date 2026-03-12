@@ -1,6 +1,6 @@
 /**
  * 语音模块 - voice.js
- * 处理语音识别（MediaRecorder + OpenRouter）和语音播报（TTS）
+ * 处理语音识别（MediaRecorder + OpenRouter Whisper）和语音播报（TTS）
  */
 
 class VoiceManager {
@@ -12,7 +12,7 @@ class VoiceManager {
         this.isRecording = false;
         this.callback = null;
         
-        console.log('语音管理器已初始化 (MediaRecorder + OpenRouter)');
+        console.log('语音管理器已初始化 (MediaRecorder + OpenRouter Whisper)');
     }
 
     /**
@@ -117,7 +117,7 @@ class VoiceManager {
     }
 
     /**
-     * 转录音频（调用阿里云百炼 Qwen3-ASR-Flash API）
+     * 转录音频（调用 OpenRouter Whisper API）
      */
     async transcribeAudio() {
         if (this.audioChunks.length === 0) {
@@ -131,20 +131,20 @@ class VoiceManager {
             // 获取录音类型
             const mimeType = this.getSupportedMimeType();
             const audioBlob = new Blob(this.audioChunks, { type: mimeType });
-            window.showToast('录音大小: ' + (audioBlob.size / 1024).toFixed(1) + 'KB');
             console.log('录音大小:', (audioBlob.size / 1024).toFixed(2), 'KB');
 
-            // 获取百炼 API Key
-            const bailianApiKey = localStorage.getItem("bailian_api_key") || "";
-            window.showToast("百炼 Key: " + (bailianApiKey ? bailianApiKey.substring(0,10)+"..." : "空"));
-            if (!bailianApiKey) {
-                window.showToast('请先设置百炼 API Key');
+            // 获取 OpenRouter API Key
+            const openrouterKey = APP_CONFIG.openrouterKey;
+            if (!openrouterKey) {
+                window.showToast('请先设置 OpenRouter API Key');
                 this.cleanup();
                 return;
             }
 
-            // 调用百炼 ASR API
-            const transcription = await this.callBailianASR(audioBlob, bailianApiKey);
+            window.showToast('正在识别...');
+
+            // 调用 OpenRouter Whisper API
+            const transcription = await this.callOpenRouterWhisper(audioBlob, openrouterKey);
 
             if (transcription) {
                 console.log('转录结果:', transcription);
@@ -165,46 +165,45 @@ class VoiceManager {
     }
 
     /**
-     * 调用阿里云百炼 Qwen3-ASR-Flash API
+     * 调用 OpenRouter Whisper API
      */
-    async callBailianASR(audioBlob, apiKey) {
+    async callOpenRouterWhisper(audioBlob, apiKey) {
         try {
-            // 转换为 base64
-            const base64Audio = await this.blobToBase64(audioBlob);
+            // 创建 FormData
+            const formData = new FormData();
+            
+            // 转换为 File 对象
+            const audioFile = new File([audioBlob], 'audio.webm', { 
+                type: audioBlob.type 
+            });
+            
+            formData.append('file', audioFile);
+            formData.append('model', 'openai/whisper-large-v3-turbo');
+            formData.append('language', 'zh');
 
-            window.showToast('正在发送到百炼...');
-
-            const response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/audio/asr/transcription', {
+            const response = await fetch('https://openrouter.ai/api/v1/audio/transcriptions', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
+                    'HTTP-Referer': window.location.origin,
+                    'X-Title': 'Homework Guardian'
                 },
-                body: JSON.stringify({
-                    model: 'qwen3-asr-flash',
-                    input: {
-                        audio: base64Audio
-                    },
-                    parameters: {
-                        language_hints: ['zh']
-                    }
-                })
+                body: formData
             });
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('百炼返回:', data);
-                const text = data.output?.results?.[0]?.transcription || null;
-                return text;
+                console.log('OpenRouter Whisper 返回:', data);
+                return data.text || null;
             } else {
                 const errorText = await response.text();
-                console.error('百炼 API 错误:', response.status, errorText);
-                window.showToast('错误: ' + response.status + ' ' + errorText.substring(0, 50));
+                console.error('OpenRouter Whisper 错误:', response.status, errorText);
+                window.showToast('识别错误: ' + response.status);
                 return null;
             }
 
         } catch(e) {
-            console.error('百炼请求异常:', e);
+            console.error('OpenRouter Whisper 异常:', e);
             window.showToast('请求异常: ' + e.message);
             return null;
         }
