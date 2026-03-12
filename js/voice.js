@@ -116,11 +116,13 @@ class VoiceManager {
                 
                 window.showToast(message);
                 this.isListening = false;
+                this.callback = null; // 清空回调
             };
 
             this.recognition.onend = () => {
                 console.log('✅ onend 事件触发 - 识别结束');
                 this.isListening = false;
+                this.callback = null; // 清空回调，避免下次误触发
             };
             
             this.recognition.onstart = () => {
@@ -151,8 +153,13 @@ class VoiceManager {
         console.log('isListening:', this.isListening);
         console.log('recognition:', !!this.recognition);
         
-        if (!this.isListening || !this.recognition) {
-            console.log('⚠️ 未在识别状态或 recognition 不存在，跳过');
+        if (!this.recognition) {
+            console.log('⚠️ recognition 不存在');
+            return;
+        }
+        
+        if (!this.isListening) {
+            console.log('⚠️ 未在识别状态，跳过');
             return;
         }
 
@@ -160,8 +167,12 @@ class VoiceManager {
             console.log('📍 调用 recognition.stop()...');
             this.recognition.stop();
             console.log('✅ 停止识别调用成功');
+            // 注意：不在这里设置 isListening = false，让 onend 事件处理
         } catch (error) {
             console.error('❌ 停止识别失败:', error);
+            // 如果停止失败，强制重置状态
+            this.isListening = false;
+            this.callback = null;
         }
     }
 
