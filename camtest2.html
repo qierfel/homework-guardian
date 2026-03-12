@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body style="background:#000;margin:0;">
+<button id="btn" style="position:fixed;top:10px;left:10px;z-index:999;padding:10px;font-size:20px;">开始</button>
+<video id="v" autoplay playsinline style="width:100vw;height:100vh;object-fit:cover;"></video>
+<script>
+document.getElementById('btn').onclick = function(){
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}})
+    .then(s=>{
+      const v = document.getElementById('v');
+      v.srcObject = s;
+      v.play();
+      document.getElementById('btn').textContent = '成功';
+    })
+    .catch(e=>{
+      document.getElementById('btn').textContent = '失败:'+e.name;
+    });
+};
+</script>
+</body>
+</html>
