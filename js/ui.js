@@ -217,15 +217,34 @@ class UIController {
      */
     async handlePhotoQuestion() {
         try {
-            window.showLoading('拍照中...');
-            
             // 获取 video 和 canvas 元素
             const video = document.getElementById('camera-video');
             const canvas = document.getElementById('camera-canvas');
             
+            // 检查摄像头是否已启动
             if (!video || !video.videoWidth || !video.videoHeight) {
-                throw new Error('摄像头未就绪，请先启动守护功能');
+                window.showToast('摄像头未启动，正在启动...');
+                
+                // 尝试启动摄像头
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'user' }
+                    });
+                    video.srcObject = stream;
+                    await video.play();
+                    
+                    // 等待一会儿让摄像头就绪
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    if (!video.videoWidth || !video.videoHeight) {
+                        throw new Error('摄像头启动失败');
+                    }
+                } catch (err) {
+                    throw new Error('无法启动摄像头: ' + err.message);
+                }
             }
+            
+            window.showLoading('拍照中...');
             
             // 设置 canvas 尺寸
             canvas.width = video.videoWidth;
@@ -237,6 +256,13 @@ class UIController {
             
             // 转换为 base64
             const imageBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            
+            // 检查图片是否有效（不是空白图）
+            if (imageBase64.length < 1000) {
+                throw new Error('拍照失败：图片无效');
+            }
+            
+            console.log('拍照成功，图片大小:', (imageBase64.length / 1024).toFixed(2), 'KB');
             
             window.hideLoading();
             
@@ -255,8 +281,10 @@ class UIController {
             // 显示 AI 回复
             this.addChatMessage(answer);
             
-            // 播放语音
-            window.voiceManager.speak(answer);
+            // 播放语音（如果可用）
+            if (window.voiceManager) {
+                window.voiceManager.speak(answer);
+            }
             
             console.log('拍照提问完成');
         } catch (error) {
