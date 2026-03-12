@@ -1025,50 +1025,61 @@ window.showHanziWriter = function(character) {
             delayBetweenStrokes: 300,
             strokeColor: '#4CAF50',
             outlineColor: '#666',
-            radicalColor: '#4CAF50',
-            
-            // 田字格背景
-            charDataLoader: (char) => {
-                return HanziWriter.loadCharacterData(char).then((data) => {
-                    // 绘制田字格
-                    const svg = grid.querySelector('svg');
-                    if (svg) {
-                        // 十字线
-                        const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                        line1.setAttribute('x1', '125');
-                        line1.setAttribute('y1', '5');
-                        line1.setAttribute('x2', '125');
-                        line1.setAttribute('y2', '245');
-                        line1.setAttribute('stroke', '#444');
-                        line1.setAttribute('stroke-width', '1');
-                        line1.setAttribute('stroke-dasharray', '5,5');
-                        svg.insertBefore(line1, svg.firstChild);
-                        
-                        const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                        line2.setAttribute('x1', '5');
-                        line2.setAttribute('y1', '125');
-                        line2.setAttribute('x2', '245');
-                        line2.setAttribute('y2', '125');
-                        line2.setAttribute('stroke', '#444');
-                        line2.setAttribute('stroke-width', '1');
-                        line2.setAttribute('stroke-dasharray', '5,5');
-                        svg.insertBefore(line2, svg.firstChild);
-                        
-                        // 外框
-                        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                        rect.setAttribute('x', '5');
-                        rect.setAttribute('y', '5');
-                        rect.setAttribute('width', '240');
-                        rect.setAttribute('height', '240');
-                        rect.setAttribute('fill', 'none');
-                        rect.setAttribute('stroke', '#666');
-                        rect.setAttribute('stroke-width', '2');
-                        svg.insertBefore(rect, svg.firstChild);
-                    }
-                    return data;
-                });
-            }
+            radicalColor: '#4CAF50'
         });
+        
+        // 等待 SVG 创建后绘制田字格
+        setTimeout(() => {
+            const svg = grid.querySelector('svg');
+            if (svg) {
+                console.log('绘制田字格...');
+                
+                // 白色背景
+                const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                bg.setAttribute('x', '0');
+                bg.setAttribute('y', '0');
+                bg.setAttribute('width', '250');
+                bg.setAttribute('height', '250');
+                bg.setAttribute('fill', '#ffffff');
+                svg.insertBefore(bg, svg.firstChild);
+                
+                // 外框（红色）
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', '5');
+                rect.setAttribute('y', '5');
+                rect.setAttribute('width', '240');
+                rect.setAttribute('height', '240');
+                rect.setAttribute('fill', 'none');
+                rect.setAttribute('stroke', '#ff0000');
+                rect.setAttribute('stroke-width', '2');
+                svg.appendChild(rect);
+                
+                // 十字线（虚线）
+                const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line1.setAttribute('x1', '125');
+                line1.setAttribute('y1', '5');
+                line1.setAttribute('x2', '125');
+                line1.setAttribute('y2', '245');
+                line1.setAttribute('stroke', '#999');
+                line1.setAttribute('stroke-width', '1');
+                line1.setAttribute('stroke-dasharray', '5,5');
+                svg.appendChild(line1);
+                
+                const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line2.setAttribute('x1', '5');
+                line2.setAttribute('y1', '125');
+                line2.setAttribute('x2', '245');
+                line2.setAttribute('y2', '125');
+                line2.setAttribute('stroke', '#999');
+                line2.setAttribute('stroke-width', '1');
+                line2.setAttribute('stroke-dasharray', '5,5');
+                svg.appendChild(line2);
+                
+                console.log('✅ 田字格绘制完成');
+            } else {
+                console.error('❌ 找不到 SVG 元素');
+            }
+        }, 100);
         
         console.log('✅ HanziWriter 创建成功，开始动画');
         writer.animateCharacter();
