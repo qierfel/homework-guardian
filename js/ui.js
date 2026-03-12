@@ -266,28 +266,57 @@ class UIController {
      * 开始语音输入
      */
     startVoiceInput() {
+        console.log('🎤 startVoiceInput 被调用');
+        
         const voiceBtn = document.getElementById('voice-ask-btn');
+        if (!voiceBtn) {
+            console.error('找不到语音按钮');
+            return;
+        }
+        
         const voiceText = voiceBtn.querySelector('.voice-text');
         
         voiceBtn.classList.add('listening');
-        voiceText.textContent = '松开发送...';
+        if (voiceText) {
+            voiceText.textContent = '松开发送...';
+        }
 
-        window.voiceManager.startListening((text) => {
-            this.handleUserQuestion(text);
-        });
+        if (window.voiceManager && typeof window.voiceManager.startListening === 'function') {
+            window.voiceManager.startListening((text) => {
+                console.log('语音识别回调，文本:', text);
+                this.handleUserQuestion(text);
+            });
+        } else {
+            console.error('voiceManager 不可用');
+            window.showToast('语音功能不可用');
+        }
     }
 
     /**
      * 停止语音输入
      */
     stopVoiceInput() {
+        console.log('🎤 stopVoiceInput 被调用');
+        
         const voiceBtn = document.getElementById('voice-ask-btn');
+        if (!voiceBtn) {
+            console.error('找不到语音按钮');
+            return;
+        }
+        
         const voiceText = voiceBtn.querySelector('.voice-text');
         
         voiceBtn.classList.remove('listening');
-        voiceText.textContent = '按住说话';
+        if (voiceText) {
+            voiceText.textContent = '按住说话';
+        }
 
-        window.voiceManager.stopListening();
+        if (window.voiceManager && typeof window.voiceManager.stopListening === 'function') {
+            console.log('调用 voiceManager.stopListening()');
+            window.voiceManager.stopListening();
+        } else {
+            console.error('voiceManager 不可用');
+        }
     }
 
     /**
