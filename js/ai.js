@@ -84,27 +84,30 @@ class AIAssistant {
     }
 
     /**
-     * 使用 Perplexity 进行联网搜索
+     * 使用 Perplexity 进行联网搜索（通过 OpenRouter）
      */
     async searchWithPerplexity(question) {
-        const perplexityKey = localStorage.getItem('perplexity_api_key') || window.APP_CONFIG?.perplexityKey;
+        // 使用现有的 OpenRouter API Key
+        const apiKey = this.getApiKey();
         
-        if (!perplexityKey) {
-            console.warn('⚠️ Perplexity API Key 未设置，使用普通模式');
+        if (!apiKey) {
+            console.warn('⚠️ API Key 未设置');
             return null;
         }
 
         try {
-            console.log('🌐 使用 Perplexity 联网搜索...');
+            console.log('🌐 使用 Perplexity 联网搜索（via OpenRouter）...');
             
-            const response = await fetch('https://api.perplexity.ai/chat/completions', {
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${perplexityKey}`,
-                    'Content-Type': 'application/json'
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': window.location.origin,
+                    'X-Title': '作业守护者'
                 },
                 body: JSON.stringify({
-                    model: 'llama-3.1-sonar-small-128k-online',
+                    model: 'perplexity/llama-3.1-sonar-small-128k-online',
                     messages: [
                         {
                             role: 'system',
@@ -119,7 +122,9 @@ class AIAssistant {
             });
 
             if (!response.ok) {
-                throw new Error(`Perplexity API 错误: ${response.status}`);
+                const errorText = await response.text();
+                console.error('API 响应错误:', errorText);
+                throw new Error(`Perplexity 搜索失败: ${response.status}`);
             }
 
             const data = await response.json();
