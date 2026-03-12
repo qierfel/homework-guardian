@@ -42,7 +42,10 @@ class AIAssistant {
      */
     getApiKey() {
         if (!this.apiKey) {
-            this.apiKey = localStorage.getItem('openrouter_api_key') || '';
+            // 优先 localStorage，其次使用 APP_CONFIG 默认值
+            this.apiKey = localStorage.getItem('openrouter_api_key') 
+                || (window.APP_CONFIG && window.APP_CONFIG.openrouterKey)
+                || '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';
         }
         return this.apiKey;
     }
