@@ -7,7 +7,9 @@ class AIAssistant {
     constructor() {
         this.apiKey = '';
         this.apiEndpoint = 'https://openrouter.ai/api/v1/chat/completions';
-        this.model = 'anthropic/claude-sonnet-4-5'; // 支持 vision
+        this.textModel = 'anthropic/claude-sonnet-4-5'; // 文字问答
+        this.visionModel = 'qwen/qwen3-vl-8b-instruct'; // 图片识别（便宜）
+        this.model = this.textModel; // 默认模型
         this.systemPrompt = `你是一个耐心友善的AI家教，正在辅导一个小学生写作业。
 用简单易懂的语言解释知识点，多鼓励，不要直接给答案，而是引导孩子思考。
 回答要简洁，适合语音播报，每次回答控制在50字以内。`;
@@ -51,9 +53,11 @@ class AIAssistant {
         }
 
         let content;
+        let useModel = this.textModel; // 默认文字模型
 
-        // 如果有图片，使用 OpenAI vision 格式
+        // 如果有图片，使用 vision 模型和图片格式
         if (imageBase64) {
+            useModel = this.visionModel; // 切换到 vision 模型
             content = [
                 {
                     type: 'text',
@@ -83,7 +87,7 @@ class AIAssistant {
         ];
 
         try {
-            const response = await this.callAPI(messages);
+            const response = await this.callAPI(messages, useModel);
             
             // 检测是否涉及汉字书写
             if (question.includes('怎么写') || question.includes('笔顺') || question.includes('田字格') || 
@@ -208,11 +212,12 @@ class AIAssistant {
     /**
      * 调用 OpenRouter API
      * @param {Array} messages - 消息数组（OpenAI 格式）
+     * @param {string} model - 模型名称（可选，默认使用 this.model）
      * @param {Object} options - 可选配置
      */
-    async callAPI(messages, options = {}) {
+    async callAPI(messages, model = null, options = {}) {
         const requestBody = {
-            model: this.model,
+            model: model || this.model,
             messages: messages,
             max_tokens: options.maxTokens || 1024
         };
