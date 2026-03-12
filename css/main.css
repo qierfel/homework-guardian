@@ -292,8 +292,9 @@ body {
 
 #camera-video {
     width: 100%;
-    height: calc(100dvh - 180px);
+    height: 100vh;
     object-fit: cover;
+    display: block;
 }
 
 .attention-overlay {

@@ -119,8 +119,36 @@ class HomeworkGuardianApp {
             startBtn.style.display = 'none';
         }
 
-        // 初始化各模块
-        await this.initModules();
+        // 直接启动摄像头（最简单方式）
+        try {
+            window.showLoading('启动摄像头...');
+            
+            const video = document.getElementById('camera-video');
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user' }
+            });
+            
+            video.srcObject = stream;
+            await video.play();
+            
+            window.hideLoading();
+            window.showToast('摄像头已启动');
+            
+            // 启动注意力检测
+            await this.startAttentionMonitoring();
+            
+            console.log('摄像头启动成功');
+        } catch (error) {
+            window.hideLoading();
+            window.showToast('摄像头错误: ' + error.name + ' ' + error.message);
+            console.error('摄像头启动失败:', error);
+            
+            // 更新状态显示错误
+            const statusText = document.querySelector('#attention-status .status-text');
+            if (statusText) {
+                statusText.textContent = '摄像头错误: ' + (error.name || error.message);
+            }
+        }
     }
 
     /**
@@ -203,7 +231,7 @@ class HomeworkGuardianApp {
      * 启动注意力监控
      */
     async startAttentionMonitoring() {
-        const videoElement = window.cameraManager.getVideoElement();
+        const videoElement = document.getElementById('camera-video');
 
         await window.attentionDetector.startDetection(videoElement, (result) => {
             this.handleAttentionChange(result);
