@@ -183,8 +183,8 @@ class AIAssistant {
                 return onlineAnswer;
             }
             
-            // 如果 Perplexity 失败，提示并继续使用普通模式
-            window.showToast('⚠️ 联网功能不可用，使用本地知识回答');
+            // 如果 Perplexity 失败，继续使用普通模式（不额外提示，避免干扰）
+            console.log('⚠️ 联网搜索失败，降级到本地知识模式');
         }
 
         let content;
