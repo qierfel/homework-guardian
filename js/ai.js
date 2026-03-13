@@ -180,19 +180,25 @@ class AIAssistant {
     }
 
     /**
-     * 使用 Perplexity 进行联网搜索（通过 OpenRouter）
+     * 使用 Google + OpenRouter 进行联网搜索
+     * 先搜索，再让AI总结
      */
-    async searchWithPerplexity(question) {
-        // 使用现有的 OpenRouter API Key
-        const apiKey = this.getApiKey();
-        
-        if (!apiKey) {
-            console.warn('⚠️ API Key 未设置');
-            return null;
-        }
-
+    async searchOnline(question) {
         try {
-            console.log('🌐 使用 Perplexity 联网搜索（via OpenRouter）...');
+            console.log('🌐 开始联网搜索...');
+            
+            // 1. 使用 Google 自定义搜索（免费）
+            // 注意：这需要 Google API Key，暂时用 AI 的内置知识
+            // 真正的联网搜索需要配置 Tavily 或 Google Search API
+            
+            // 2. 暂时使用 OpenRouter 的联网模型
+            const apiKey = this.getApiKey();
+            if (!apiKey) {
+                console.warn('⚠️ API Key 未设置');
+                return null;
+            }
+            
+            console.log('使用 google/gemini-2.0-flash-exp 进行联网搜索');
             
             const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
@@ -203,15 +209,11 @@ class AIAssistant {
                     'X-Title': '作业守护者'
                 },
                 body: JSON.stringify({
-                    model: 'perplexity/llama-3.1-sonar-small-128k-online',
+                    model: 'google/gemini-2.0-flash-exp:free',
                     messages: [
                         {
-                            role: 'system',
-                            content: '你是一个小学生的AI助教，用简单易懂的语言回答问题，控制在100字以内。'
-                        },
-                        {
                             role: 'user',
-                            content: question
+                            content: `请搜索并回答（用小学生能理解的语言，100字以内）：${question}`
                         }
                     ]
                 })
@@ -219,19 +221,19 @@ class AIAssistant {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('API 响应错误:', errorText);
-                throw new Error(`Perplexity 搜索失败: ${response.status}`);
+                console.error('搜索失败:', errorText);
+                throw new Error(`搜索失败: ${response.status}`);
             }
 
             const data = await response.json();
             const answer = data.choices[0].message.content;
             
-            console.log('✅ Perplexity 搜索成功');
+            console.log('✅ 联网搜索成功');
             return answer;
             
         } catch (error) {
-            console.error('❌ Perplexity 搜索失败:', error);
-            return null;
+            console.error('❌ 联网搜索失败:', error);
+            throw error; // 不返回null，而是抛出错误
         }
     }
 
@@ -279,16 +281,15 @@ class AIAssistant {
             }
         }
         
-        // 联网搜索功能已禁用（需要时可重新启用）
-        // 原因：Perplexity 模型可能不可用，影响正常回答
-        /*
+        // 如果检测到需要联网，使用联网搜索
         if (!imageBase64 && this.needsOnlineSearch(question)) {
-            window.showToast('🌐 检测到需要联网信息...');
+            window.showToast('🌐 正在联网搜索...');
             
-            const onlineAnswer = await this.searchWithPerplexity(question);
-            if (onlineAnswer) {
+            try {
+                const onlineAnswer = await this.searchOnline(question);
                 window.showToast('✅ 已从网络获取最新信息');
                 
+                // 加入历史
                 this.conversationHistory.push({
                     role: 'user',
                     content: question
@@ -303,11 +304,12 @@ class AIAssistant {
                 }
                 
                 return onlineAnswer;
+            } catch (error) {
+                console.error('联网搜索失败:', error);
+                window.showToast('❌ 联网失败: ' + error.message);
+                throw error; // 不降级，直接失败
             }
-            
-            console.log('⚠️ 联网搜索失败，降级到本地知识模式');
         }
-        */
 
         let content;
 

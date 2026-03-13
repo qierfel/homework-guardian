@@ -122,7 +122,7 @@ class VoiceManager {
             this.recognition.onend = () => {
                 console.log('✅ onend 事件触发 - 识别结束');
                 this.isListening = false;
-                this.callback = null; // 清空回调，避免下次误触发
+                // 不清空 callback，保留给下次使用
             };
             
             this.recognition.onstart = () => {
