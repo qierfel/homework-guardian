@@ -370,38 +370,42 @@ body {
 
 .camera-controls {
     position: absolute;
-    bottom: 30px;
+    bottom: 120px;
     left: 50%;
     transform: translateX(-50%);
     display: flex !important;
-    gap: 20px;
+    gap: 15px;
     z-index: 100;
     pointer-events: auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 90%;
 }
 
 .icon-btn {
     background: rgba(15, 23, 42, 0.9) !important;
     backdrop-filter: blur(10px);
     border: none;
-    border-radius: 16px;
-    padding: 16px 24px;
+    border-radius: 12px;
+    padding: 10px 16px;
     color: var(--text-primary);
     cursor: pointer;
     display: flex !important;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     transition: transform 0.2s;
     visibility: visible !important;
     opacity: 1 !important;
+    min-width: 70px;
 }
 
 .icon-btn span {
-    font-size: 32px;
+    font-size: 24px;
 }
 
 .icon-btn small {
-    font-size: 13px;
+    font-size: 11px;
     color: var(--text-secondary);
 }
 
