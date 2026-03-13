@@ -373,23 +373,27 @@ body {
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    display: flex;
+    display: flex !important;
     gap: 20px;
+    z-index: 100;
+    pointer-events: auto;
 }
 
 .icon-btn {
-    background: rgba(15, 23, 42, 0.9);
+    background: rgba(15, 23, 42, 0.9) !important;
     backdrop-filter: blur(10px);
     border: none;
     border-radius: 16px;
     padding: 16px 24px;
     color: var(--text-primary);
     cursor: pointer;
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     align-items: center;
     gap: 8px;
     transition: transform 0.2s;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .icon-btn span {
